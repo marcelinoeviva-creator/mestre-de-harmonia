@@ -123,8 +123,9 @@ export async function handleRedirect(clientId){
       client_id: clientId, code_verifier: verifier
     })
   });
-  const j = await r.json();
-  if(!r.ok) throw new Error(j.error_description || 'Falha ao autenticar.');
+  const { data: j, text, notJson } = await readBody(r);
+  if(notJson) throw notJsonError(r, text);
+  if(!r.ok) throw new Error((j?.error_description || 'Falha ao autenticar.') + raw(r.status, j?.error, ''));
   store(j);
   return 'ok';
 }
@@ -164,8 +165,9 @@ async function ensureToken(clientId){
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams({ grant_type: 'refresh_token', refresh_token: auth.refresh, client_id: clientId })
   });
-  const j = await r.json();
-  if(!r.ok){ logout(); throw new Error('Sessão do Spotify expirou. Conecte novamente.'); }
+  const { data: j, text, notJson } = await readBody(r);
+  if(notJson) throw notJsonError(r, text);          // rede no caminho: não descarta a sessão
+  if(!r.ok){ logout(); throw new Error('Sessão do Spotify expirou. Conecte novamente.' + raw(r.status, j?.error_description, j?.error)); }
   store(j);
   return auth.token;
 }
@@ -181,6 +183,30 @@ export class SpotifyError extends Error{
 const raw = (status, msg, reason) =>
   `\n\n[Spotify ${status}${reason ? ' · ' + reason : ''}${msg ? ': ' + msg : ''}]`;
 
+/** Lê o corpo da resposta sem nunca estourar.
+    Nem toda resposta é JSON: portal de wi-fi, filtro de rede ou uma
+    página de erro chegam como texto, e antes isso virava um
+    "JSON Parse error" que escondia a causa verdadeira. */
+async function readBody(r){
+  const text = await r.text();
+  if(!text) return { data: null, text: '' };
+  try{ return { data: JSON.parse(text), text }; }
+  catch(e){ return { data: null, text, notJson: true }; }
+}
+
+/** Quando a resposta não é JSON, o problema é a rede, não o Spotify. */
+function notJsonError(r, text){
+  const trecho = text.replace(/\s+/g, ' ').trim().slice(0, 140);
+  let host = '';
+  try{ host = ' de ' + new URL(r.url).host; }catch(e){ /* resposta sem URL */ }
+  return new SpotifyError(
+    'A resposta não veio do Spotify. Isso costuma ser a rede no caminho: ' +
+    'wi-fi com portal de login, filtro de conteúdo ou VPN/Private Relay. ' +
+    'Tente pelos dados móveis ou em outra rede.' +
+    `\n\n[resposta ${r.status}${host}: "${trecho}"]`,
+    'NOT_JSON');
+}
+
 async function call(clientId, path, { method = 'GET', body, query } = {}){
   const token = await ensureToken(clientId);
   const url = new URL(API + path);
@@ -193,8 +219,8 @@ async function call(clientId, path, { method = 'GET', body, query } = {}){
   });
 
   if(r.status === 204) return null;
-  const text = await r.text();
-  const data = text ? JSON.parse(text) : null;
+  const { data, text, notJson } = await readBody(r);
+  if(notJson) throw notJsonError(r, text);
 
   if(!r.ok){
     const reason = data?.error?.reason;
