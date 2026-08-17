@@ -194,8 +194,14 @@ async function call(clientId, path, { method = 'GET', body, query } = {}){
   if(!r.ok){
     const reason = data?.error?.reason;
     const msg = data?.error?.message || 'Erro do Spotify';
-    if(r.status === 404 || reason === 'NO_ACTIVE_DEVICE')
+    const isPlayer = path.startsWith('/me/player');
+    if(reason === 'NO_ACTIVE_DEVICE' || (r.status === 404 && isPlayer))
       throw new SpotifyError('Nenhum aparelho ativo. Abra o app do Spotify no iPad e toque qualquer coisa por 1 segundo.', 'NO_DEVICE');
+    if(r.status === 404)
+      throw new SpotifyError(
+        'O Spotify não encontrou este item. Playlists geradas por ele — Descobertas da Semana, ' +
+        'Daily Mix, Rádio, as "Feitas para você" e as editoriais do próprio Spotify — não podem ser ' +
+        'lidas por aplicativos. Só funcionam playlists criadas por você.', 'NOT_FOUND');
     if(r.status === 403 && /premium/i.test(msg + reason))
       throw new SpotifyError('O controle remoto do Spotify exige conta Premium.', 'PREMIUM');
     if(r.status === 403)
