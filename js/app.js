@@ -509,6 +509,7 @@ function openImport(){
 
 let spProfile = null;    // { display_name, product } quando a API responde de fato
 let spFault = '';        // motivo, quando o token existe mas a API recusa
+let spChecking = false;  // teste em andamento
 
 async function initSpotify(){
   SP.restore();
@@ -530,15 +531,21 @@ async function initSpotify(){
    Spotify devolve 403 em tudo. Só chamando /me dá para saber. */
 async function checkSpotify(){
   spProfile = null; spFault = '';
-  if(!SP.connected()) return false;
+  if(!SP.connected()){ spChecking = false; paintSpotify(); return false; }
+  spChecking = true; paintSpotify();
   try{
-    spProfile = await SP.me(st.settings.clientId);
-    paintSpotify();
+    // Se a rede engasgar, não deixa a interface presa em "Verificando…".
+    spProfile = await Promise.race([
+      SP.me(st.settings.clientId),
+      new Promise((_, rej) => setTimeout(() => rej(new Error('O Spotify não respondeu. Verifique a internet e toque em "Testar de novo".')), 12000))
+    ]);
     return true;
   }catch(e){
     spFault = e.message;
-    paintSpotify();
     return false;
+  }finally{
+    spChecking = false;
+    paintSpotify();
   }
 }
 
@@ -564,25 +571,32 @@ function paintSpotify(){
   const chip = $('#spotifyStatus'), label = $('.chip-label', chip);
   const deck = $('#spDeck');
   // Verde só quando a API respondeu de verdade (spProfile preenchido).
-  const on = SP.connected() && !spFault;
-  const working = on && !!spProfile;
+  const logged = SP.connected();
+  const working = logged && !spFault && !!spProfile;
 
-  chip.className = 'chip ' + (working ? 'chip-on' : (spFault || st.settings.clientId) ? 'chip-warn' : 'chip-off');
-  label.textContent = spFault ? 'Spotify bloqueado'
-                    : working ? (spProfile.product === 'premium' ? 'Spotify' : 'Spotify (grátis)')
-                    : st.settings.clientId ? 'Verificando…' : 'Modo link';
+  let label_, cls;
+  if(!logged){                 // sem token: nunca é "verificando"
+    label_ = st.settings.clientId ? 'Toque para conectar' : 'Modo link';
+    cls = st.settings.clientId ? 'chip-warn' : 'chip-off';
+  }else if(spChecking){ label_ = 'Verificando…';       cls = 'chip-warn'; }
+  else if(spFault){     label_ = 'Spotify bloqueado';  cls = 'chip-warn'; }
+  else if(working){     label_ = spProfile.product === 'premium' ? 'Spotify' : 'Spotify (grátis)'; cls = 'chip-on'; }
+  else{                 label_ = 'Toque para conectar'; cls = 'chip-warn'; }
+
+  chip.className = 'chip ' + cls;
+  label.textContent = label_;
   deck.classList.toggle('off', !working);
   faders.S?.enable(working && spProfile.product === 'premium');
 
-  if(spFault){
+  if(logged && spFault){
     $('#spTitle').textContent = 'Spotify recusou o acesso';
     $('#spDevice').textContent = 'toque aqui em cima para ver o motivo';
     $('#spHint').textContent = 'Tocar abre o app do Spotify.';
     return;
   }
 
-  if(!on){
-    $('#spTitle').textContent = 'Spotify em modo link';
+  if(!working){
+    $('#spTitle').textContent = logged ? 'Verificando o Spotify…' : 'Spotify em modo link';
     $('#spDevice').textContent = '—';
     $('#spHint').textContent = 'Tocar abre o app do Spotify.';
     $('#spToggle').classList.remove('on');
@@ -632,7 +646,13 @@ function diagBox(){
   const draw = () => {
     box.innerHTML = '';
     if(!SP.connected()){
-      box.append(el('p', { class:'hint' }, 'Não conectado. O app funciona em modo link.'));
+      box.append(el('div', { class:'notice' },
+        'Não conectado ao Spotify. Preencha o Client ID abaixo e toque em Conectar. ' +
+        'Enquanto isso o app funciona em modo link: tocar uma peça abre o app do Spotify.'));
+      return;
+    }
+    if(spChecking){
+      box.append(el('p', { class:'hint' }, 'Verificando a conexão…'));
       return;
     }
     if(spFault){
