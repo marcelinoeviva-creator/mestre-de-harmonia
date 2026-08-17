@@ -26,7 +26,7 @@ const uid = () => 'x' + Math.random().toString(36).slice(2, 9) + Date.now().toSt
 function freshState(){
   return {
     version: 1,
-    lodge: 'Loja Maçônica',
+    lodge: 'A∴R∴L∴S∴ Colunas de Pedras Grandes',
     moments: DEFAULT_MOMENTS.map(name => ({ id: uid(), name, trackIds: [] })),
     tracks: {},
     settings: {

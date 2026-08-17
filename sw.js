@@ -19,6 +19,7 @@ const SHELL = [
   './js/spotify.js',
   './js/ui.js',
   './manifest.webmanifest',
+  './icons/logo.png',
   './icons/icon-192.png',
   './icons/icon-512.png',
   './icons/icon-180.png'

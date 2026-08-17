@@ -105,7 +105,13 @@ js/spotify.js           links, oEmbed público, login PKCE, Web API
 js/ui.js                diálogos, avisos, fader vertical
 js/app.js               montagem e comportamento
 sw.js                   funcionamento offline
+icons/logo-src.png      emblema da Loja, original em alta resolução
+icons/logo.png          emblema usado no cabeçalho e na marca d'água
+icons/icon-*.png        ícone da tela de início, gerado a partir do emblema
 ```
+
+O emblema é arte de traço escuro, então aparece sempre sobre um medalhão claro
+(cabeçalho e ícone) ou invertido e apagado (marca d'água).
 
 Sem dependências, sem build. Qualquer servidor de arquivos estáticos com HTTPS serve.
 

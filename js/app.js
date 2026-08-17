@@ -78,7 +78,7 @@ function wireHeader(){
       buttons:[
         { label:'Cancelar', onClick: c => c() },
         { label:'Salvar', kind:'primary', onClick: c => {
-            st.lodge = i.value.trim() || 'Loja Maçônica';
+            st.lodge = i.value.trim() || 'A∴R∴L∴S∴ Colunas de Pedras Grandes';
             $('#lodgeName').textContent = st.lodge; S.save(); c();
         }}
       ]
