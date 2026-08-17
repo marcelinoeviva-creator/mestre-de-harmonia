@@ -347,11 +347,20 @@ async function cue(t, deckId, autoplay = false){
 
 /* ── Editor de peça ───────────────────────── */
 
+/** <select> com todos os momentos, com um deles já marcado. */
+function momentSelect(selectedId){
+  return el('select', {}, ...st.moments.map(m =>
+    el('option', { value: m.id, selected: m.id === selectedId ? '' : null }, m.name)));
+}
+
 function openTrackEditor(existing){
-  const m = S.selectedMoment();
-  if(!m && !existing) return toast('Crie um momento primeiro.', true);
+  // Ao editar, o momento que vale é o que realmente contém a peça —
+  // na busca, o selecionado na lateral pode ser outro.
+  const m = (existing && S.momentOf(existing.id)) || S.selectedMoment();
+  if(!m) return toast('Crie um momento primeiro.', true);
 
   const t = existing || {};
+  const fMoment = existing ? momentSelect(m.id) : null;
   let pendingFile = null;              // { blob, name }
 
   const fLink   = input({ value: t.spotifyUrl || '', placeholder:'https://open.spotify.com/track/…' });
@@ -383,6 +392,7 @@ function openTrackEditor(existing){
   fLink.addEventListener('paste', () => setTimeout(lookup, 120));
 
   const body = el('div', {},
+    existing ? field('Momento', fMoment, 'Troque aqui para mover a peça de lugar no roteiro.') : null,
     field('Link do Spotify', fLink,
       'No app do Spotify: <strong>⋯ → Compartilhar → Copiar link</strong>. O título é preenchido sozinho.'),
     field('Nome da peça', fTitle),
@@ -417,8 +427,14 @@ function openTrackEditor(existing){
       data.fileKey = await S.putFile(pendingFile.blob);
       data.fileName = pendingFile.name;
     }
-    if(existing) S.updateTrack(existing.id, data);
-    else S.addTrack(m.id, data);
+    if(existing){
+      S.updateTrack(existing.id, data);
+      if(fMoment && fMoment.value !== m.id && S.moveTrackToMoment(existing.id, fMoment.value)){
+        toast(`Movida para "${S.getMoment(fMoment.value).name}".`);
+      }
+    }else{
+      S.addTrack(m.id, data);
+    }
     c(); paintMoments(); paintTracks();
   }});
 
@@ -449,18 +465,26 @@ function openImport(){
     });
   }
 
-  const m = S.selectedMoment();
+  const m0 = S.selectedMoment();
   const fLink = input({ placeholder:'https://open.spotify.com/playlist/…' });
-  const status = el('p', { class:'hint' }, `As peças entram no momento "${m?.name || '—'}".`);
+  const fMoment = momentSelect(m0?.id);
+  const status = el('p', { class:'hint' }, '');
 
   modal({
     title:'Importar playlist',
-    body: el('div', {}, field('Link da playlist', fLink), status),
+    body: el('div', {},
+      field('Link da playlist', fLink,
+        'No Spotify, na playlist: <strong>⋯ → Compartilhar → Copiar link</strong>.'),
+      field('Levar as peças para', fMoment,
+        'Se errar, dá para mover peça por peça depois (✎ na peça → Momento).'),
+      status),
     buttons:[
       { label:'Cancelar', onClick: c => c() },
       { label:'Importar', kind:'primary', onClick: async () => {
           const p = SP.parseLink(fLink.value);
           if(!p || p.type !== 'playlist') return toast('Cole o link de uma playlist.', true);
+          const m = S.getMoment(fMoment.value);
+          if(!m) return toast('Escolha o momento de destino.', true);
           status.textContent = 'Buscando…';
           try{
             const items = await SP.playlistTracks(st.settings.clientId, p.id,

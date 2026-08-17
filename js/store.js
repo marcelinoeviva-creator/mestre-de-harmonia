@@ -148,6 +148,22 @@ export async function removeTrack(momentId, trackId){
   save();
 }
 
+/** Em qual momento esta peça está. */
+export function momentOf(trackId){
+  return state.moments.find(m => m.trackIds.includes(trackId)) || null;
+}
+
+/** Passa a peça de um momento para outro, preservando tudo o mais. */
+export function moveTrackToMoment(trackId, toMomentId){
+  const from = momentOf(trackId);
+  const to = getMoment(toMomentId);
+  if(!from || !to || from.id === to.id) return false;
+  from.trackIds = from.trackIds.filter(x => x !== trackId);
+  if(!to.trackIds.includes(trackId)) to.trackIds.push(trackId);
+  save();
+  return true;
+}
+
 export function moveTrack(momentId, trackId, dir){
   const m = getMoment(momentId); if(!m) return;
   const i = m.trackIds.indexOf(trackId);
