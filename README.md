@@ -1,5 +1,11 @@
 # Mestre de Harmonia
 
+## ▶ [ABRIR O APLICATIVO](https://marcelinoeviva-creator.github.io/mestre-de-harmonia/)
+
+Toque no link acima **no Safari do iPad**, depois em Compartilhar → Adicionar à Tela de Início.
+
+---
+
 Painel de música para sessões maçônicas, feito para o **iPad 9ª geração / iPadOS 26**.
 
 Aplicativo web instalável (PWA): abre em tela cheia pelo ícone, funciona sem internet
