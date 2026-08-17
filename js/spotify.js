@@ -220,11 +220,21 @@ async function call(clientId, path, { method = 'GET', body, query } = {}){
 
   if(r.status === 204) return null;
   const { data, text, notJson } = await readBody(r);
-  if(notJson) throw notJsonError(r, text);
 
   if(!r.ok){
+    // Erro do Spotify pode vir como texto puro; nesse caso o próprio
+    // texto é a mensagem — não é sinal de rede intrometida.
     const reason = data?.error?.reason;
-    const msg = data?.error?.message || 'Erro do Spotify';
+    const msg = data?.error?.message || (notJson ? text.replace(/\s+/g,' ').trim().slice(0, 200) : '') || 'Erro do Spotify';
+
+    if(r.status === 403 && /may not be registered|not registered/i.test(msg))
+      throw new SpotifyError(
+        'Sua conta do Spotify não está na lista de autorizados deste app. ' +
+        'Apps novos nascem em "Development Mode" e só aceitam contas cadastradas à mão.\n\n' +
+        'Como resolver: developer.spotify.com/dashboard → seu app → Settings → ' +
+        'User Management → adicione o seu nome e o e-mail da conta Spotify que você usa no iPad → ' +
+        'Add user. Depois volte aqui e faça Desconectar e Conectar de novo.' +
+        raw(r.status, msg, reason), 'NOT_REGISTERED');
     const isPlayer = path.startsWith('/me/player');
     if(reason === 'NO_ACTIVE_DEVICE' || (r.status === 404 && isPlayer))
       throw new SpotifyError('Nenhum aparelho ativo. Abra o app do Spotify no iPad e toque qualquer coisa por 1 segundo.', 'NO_DEVICE');
@@ -247,6 +257,9 @@ async function call(clientId, path, { method = 'GET', body, query } = {}){
       throw new SpotifyError('Muitos comandos seguidos. Aguarde alguns segundos.', 'RATE');
     throw new SpotifyError(msg + raw(r.status, msg, reason), String(r.status));
   }
+
+  // Resposta com sucesso mas ilegível: aí sim é alguém no meio do caminho.
+  if(notJson) throw notJsonError(r, text);
   return data;
 }
 
