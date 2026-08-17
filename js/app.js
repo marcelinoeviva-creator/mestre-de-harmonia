@@ -487,7 +487,8 @@ function openImport(){
           status.textContent = `Escolhida: ${p.name}`;
         }},
           el('span', { class:'grow' }, p.name),
-          el('span', { class:'badge' }, `${p.tracks}`)
+          el('span', { class:'badge' + (p.mine ? ' local' : '') }, p.mine ? 'sua' : (p.owner || 'de outro')),
+          p.tracks === null ? null : el('span', { class:'badge' }, `${p.tracks}`)
         ));
       }
       btnMinhas.textContent = 'Minhas playlists';
@@ -557,7 +558,7 @@ async function initSpotify(){
 /* Token válido não significa API liberada: em Development Mode o
    Spotify devolve 403 em tudo. Só chamando /me dá para saber. */
 async function checkSpotify(){
-  spProfile = null; spFault = '';
+  spProfile = null; spFault = ''; SP.auth.userId = '';
   if(!SP.connected()){ spChecking = false; paintSpotify(); return false; }
   spChecking = true; paintSpotify();
   try{
@@ -566,6 +567,7 @@ async function checkSpotify(){
       SP.me(st.settings.clientId),
       new Promise((_, rej) => setTimeout(() => rej(new Error('O Spotify não respondeu. Verifique a internet e toque em "Testar de novo".')), 12000))
     ]);
+    SP.auth.userId = spProfile?.id || '';     // permite marcar quais playlists são suas
     return true;
   }catch(e){
     spFault = e.message;
@@ -710,6 +712,41 @@ function diagBox(){
   return box;
 }
 
+/* Roda uma bateria de chamadas e mostra a resposta crua de cada uma.
+   Existe para acabar com o chute: o Spotify diz "403 Forbidden" sem
+   explicar, então a única saída é comparar o que passa e o que não passa. */
+async function openDiagnostico(){
+  const box = el('div', {}, el('p', { class:'hint' }, 'Testando…'));
+  modal({ title:'Diagnóstico do Spotify', body: box, buttons:[{ label:'Fechar', kind:'primary', onClick: c => c() }] });
+
+  const cid = st.settings.clientId;
+  const linhas = [];
+  const add = r => linhas.push(`${r.status}  GET ${r.path}\n${r.corpo}`);
+
+  add(await SP.probe(cid, '/me'));
+  const lp = await SP.probe(cid, '/me/playlists?limit=1');
+  add(lp);
+
+  // pega o id da primeira playlist para sondar o conteúdo dela
+  let pid = null;
+  try{ pid = JSON.parse(lp.corpo.replace(/…$/,''))?.items?.[0]?.id; }catch(e){}
+  if(!pid){
+    try{ const ps = await SP.myPlaylists(cid); pid = ps[0]?.id; }catch(e){}
+  }
+  if(pid){
+    add(await SP.probe(cid, `/playlists/${pid}`));
+    add(await SP.probe(cid, `/playlists/${pid}/tracks?limit=1`));
+  }
+  add(await SP.probe(cid, '/me/tracks?limit=1'));
+
+  box.innerHTML = '';
+  box.append(
+    el('p', { class:'hint' }, 'Copie este bloco inteiro e envie para quem cuida do app:'),
+    el('div', { class:'notice', style:'font-size:12px' },
+      `escopos pedidos: ${SP.grantedScopes()}\n\n` + linhas.join('\n\n'))
+  );
+}
+
 function openSettings(){
   const cid = input({ value: st.settings.clientId, placeholder:'cole aqui o Client ID' });
   const openApp = el('select', {},
@@ -741,6 +778,8 @@ function openSettings(){
     connectRow,
     el('p', { class:'hint', html:
       'Ao criar o app em developer.spotify.com, use exatamente este Redirect URI:<br><code>' + esc(SP.redirectUri()) + '</code>' }),
+    el('div', { class:'field', style:'margin-top:12px' },
+      el('button', { class:'ghost-btn', onclick: openDiagnostico }, 'Diagnóstico da conexão')),
     el('div', { class:'field', style:'margin-top:16px' },
       el('label', {}, 'Ao tocar uma peça sem conexão'), openApp),
 

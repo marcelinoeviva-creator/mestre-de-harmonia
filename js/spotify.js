@@ -32,7 +32,7 @@ const SCOPES = [
 const TOK_KEY = 'mh:sp:token';
 const VER_KEY = 'mh:sp:verifier';
 
-export const auth = { token: null, expires: 0, refresh: null };
+export const auth = { token: null, expires: 0, refresh: null, userId: '' };
 
 /* ── Links ────────────────────────────────── */
 
@@ -298,7 +298,16 @@ export async function myPlaylists(cid){
     total = page.total || 0;
     for(const p of page.items || []){
       if(!p) continue;
-      out.push({ id: p.id, name: p.name, tracks: p.tracks?.total || 0, owner: p.owner?.display_name || '' });
+      out.push({
+        id: p.id,
+        name: p.name,
+        // null (e não 0) quando a API não informa: 0 falso confunde
+        tracks: typeof p.tracks?.total === 'number' ? p.tracks.total : null,
+        owner: p.owner?.display_name || p.owner?.id || '',
+        mine: !!p.owner?.id && p.owner.id === (auth.userId || ''),
+        collaborative: !!p.collaborative,
+        public: p.public
+      });
     }
     offset += 50;
   }while(offset < total);
@@ -345,3 +354,19 @@ export async function playlistTracks(cid, playlistId, onPage){
 }
 
 export const playlistInfo = (cid, id) => call(cid, `/playlists/${id}`, { query: { fields: 'name,images,tracks(total)' } });
+
+/** Sonda um endereço sem lançar erro: devolve status e o começo do corpo.
+    Serve para descobrir exatamente onde a API corta o acesso. */
+export async function probe(cid, path){
+  try{
+    const token = await ensureToken(cid);
+    const r = await fetch(API + path, { headers: { Authorization: 'Bearer ' + token } });
+    const text = await r.text();
+    return { path, status: r.status, corpo: text.replace(/\s+/g, ' ').trim().slice(0, 260) };
+  }catch(e){
+    return { path, status: 'falhou', corpo: e.message.slice(0, 200) };
+  }
+}
+
+/** Escopos que o token atualmente carrega, segundo o próprio Spotify. */
+export const grantedScopes = () => SCOPES;
