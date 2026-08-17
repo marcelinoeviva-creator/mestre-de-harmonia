@@ -471,12 +471,39 @@ function openImport(){
   const fLink = input({ placeholder:'https://open.spotify.com/playlist/…' });
   const fMoment = momentSelect(m0?.id);
   const status = el('p', { class:'hint' }, '');
+  const lista = el('div');
+
+  /* Escolher da própria conta evita erro de link e de propriedade. */
+  const btnMinhas = el('button', { class:'ghost-btn', style:'width:100%', onclick: async () => {
+    btnMinhas.textContent = 'Buscando…';
+    try{
+      const ps = await SP.myPlaylists(st.settings.clientId);
+      lista.innerHTML = '';
+      if(!ps.length){ lista.append(el('p', { class:'hint' }, 'Nenhuma playlist na conta.')); }
+      for(const p of ps){
+        lista.append(el('button', { class:'dev-item', onclick: () => {
+          fLink.value = SP.webUrl('playlist', p.id);
+          lista.innerHTML = '';
+          status.textContent = `Escolhida: ${p.name}`;
+        }},
+          el('span', { class:'grow' }, p.name),
+          el('span', { class:'badge' }, `${p.tracks}`)
+        ));
+      }
+      btnMinhas.textContent = 'Minhas playlists';
+    }catch(e){
+      btnMinhas.textContent = 'Minhas playlists';
+      lista.innerHTML = '';
+      lista.append(el('div', { class:'notice' }, e.message));
+    }
+  }}, 'Minhas playlists');
 
   modal({
     title:'Importar playlist',
     body: el('div', {},
       field('Link da playlist', fLink,
         'No Spotify, na playlist: <strong>⋯ → Compartilhar → Copiar link</strong>.'),
+      el('div', { class:'field' }, btnMinhas, lista),
       field('Levar as peças para', fMoment,
         'Se errar, dá para mover peça por peça depois (✎ na peça → Momento).'),
       status),

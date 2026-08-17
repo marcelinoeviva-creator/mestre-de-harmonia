@@ -289,14 +289,42 @@ export const setVolume = (cid, percent) =>
 export const queue = (cid, trackId) =>
   call(cid, '/me/player/queue', { method: 'POST', query: { uri: uri('track', trackId) } });
 
-/** Playlist inteira, paginada. onPage recebe (carregadas, total). */
+/** As playlists da conta, para escolher sem depender de link. */
+export async function myPlaylists(cid){
+  const out = [];
+  let offset = 0, total = 0;
+  do{
+    const page = await call(cid, '/me/playlists', { query: { limit: 50, offset } });
+    total = page.total || 0;
+    for(const p of page.items || []){
+      if(!p) continue;
+      out.push({ id: p.id, name: p.name, tracks: p.tracks?.total || 0, owner: p.owner?.display_name || '' });
+    }
+    offset += 50;
+  }while(offset < total);
+  return out;
+}
+
+/** Playlist inteira, paginada. onPage recebe (carregadas, total).
+    O parâmetro `fields` é um atalho de economia; se ele for recusado,
+    vale mais trazer tudo do que falhar. */
 export async function playlistTracks(cid, playlistId, onPage){
   const out = [];
-  let offset = 0, total = null;
+  let offset = 0, total = null, useFields = true;
   do{
-    const page = await call(cid, `/playlists/${playlistId}/tracks`, {
-      query: { limit: 50, offset, fields: 'total,items(track(id,name,duration_ms,artists(name),album(images)))' }
-    });
+    let page;
+    try{
+      page = await call(cid, `/playlists/${playlistId}/tracks`, {
+        query: useFields
+          ? { limit: 50, offset, fields: 'total,items(track(id,name,duration_ms,artists(name),album(images)))' }
+          : { limit: 50, offset }
+      });
+    }catch(e){
+      if(useFields && (e.code === 'FORBIDDEN' || e.code === '403')){
+        useFields = false;                     // tenta de novo sem o filtro de campos
+        page = await call(cid, `/playlists/${playlistId}/tracks`, { query: { limit: 50, offset } });
+      }else throw e;
+    }
     total = page.total;
     for(const it of page.items || []){
       const t = it.track;
