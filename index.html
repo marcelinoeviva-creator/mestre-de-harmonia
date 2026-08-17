@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>Mestre de Harmonia</title>
+
+<meta name="theme-color" content="#0a0f1c">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Harmonia">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+
+<!-- ═══════════ CABEÇALHO ═══════════ -->
+<header class="topbar">
+  <div class="brand">
+    <svg class="brand-mark" viewBox="0 0 48 48" aria-hidden="true">
+      <path d="M24 6 L38 34 M24 6 L10 34" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+      <path d="M12 26 L24 42 L36 26" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="24" cy="6" r="2.6" fill="currentColor"/>
+      <text x="24" y="31" text-anchor="middle" font-size="13" font-family="Georgia,serif" fill="currentColor">G</text>
+    </svg>
+    <div class="brand-text">
+      <h1>Mestre de Harmonia</h1>
+      <button id="lodgeName" class="lodge-name" title="Toque para editar o nome da Loja">Loja Maçônica</button>
+    </div>
+  </div>
+
+  <div class="topbar-actions">
+    <div id="spotifyStatus" class="chip chip-off" title="Estado da conexão com o Spotify">
+      <span class="dot"></span><span class="chip-label">Spotify</span>
+    </div>
+    <button id="btnSearch"   class="icon-btn" title="Buscar peça">Buscar</button>
+    <button id="btnSettings" class="icon-btn" title="Ajustes">Ajustes</button>
+  </div>
+</header>
+
+<!-- ═══════════ CORPO ═══════════ -->
+<main class="workspace">
+
+  <!-- Momentos do ritual -->
+  <aside class="moments" id="momentsPane">
+    <div class="pane-head">
+      <h2>Momentos</h2>
+      <button id="btnAddMoment" class="mini-btn" title="Novo momento">+</button>
+    </div>
+    <ul id="momentList" class="moment-list"></ul>
+    <div class="pane-foot">
+      <button id="btnEditMoments" class="ghost-btn">Organizar</button>
+    </div>
+  </aside>
+
+  <!-- Peças do momento selecionado -->
+  <section class="tracks">
+    <div class="pane-head tracks-head">
+      <div>
+        <h2 id="momentTitle">—</h2>
+        <p id="momentSub" class="sub"></p>
+      </div>
+      <div class="head-actions">
+        <button id="btnAddTrack" class="primary-btn">+ Peça</button>
+        <button id="btnImportPlaylist" class="ghost-btn" title="Importar playlist inteira do Spotify">Importar playlist</button>
+      </div>
+    </div>
+    <div id="searchBar" class="search-bar hidden">
+      <input id="searchInput" type="search" placeholder="Buscar em todas as peças…" autocomplete="off">
+      <button id="btnSearchClose" class="mini-btn">✕</button>
+    </div>
+    <ul id="trackList" class="track-list"></ul>
+    <div id="trackEmpty" class="empty hidden">
+      <p>Nenhuma peça neste momento.</p>
+      <p class="sub">Use <strong>+ Peça</strong> e cole o link do Spotify (Compartilhar → Copiar link).</p>
+    </div>
+  </section>
+</main>
+
+<!-- ═══════════ MESA DE SOM ═══════════ -->
+<footer class="console" id="console">
+  <button id="btnConsoleToggle" class="console-grip" title="Recolher/expandir a mesa"></button>
+
+  <div class="console-inner">
+
+    <!-- Deck A -->
+    <div class="deck" id="deckA-el" data-deck="A">
+      <div class="deck-head">
+        <span class="deck-tag">A</span>
+        <div class="deck-meta">
+          <span class="deck-title" data-role="title">— vazio —</span>
+          <span class="deck-time" data-role="time">0:00 / 0:00</span>
+        </div>
+      </div>
+      <div class="deck-body">
+        <div class="fader" data-role="fader" data-target="A">
+          <div class="fader-track"><div class="fader-fill"></div><div class="fader-knob"></div></div>
+          <span class="fader-val">80</span>
+        </div>
+        <div class="deck-controls">
+          <button class="deck-btn play" data-act="toggle" data-deck="A">▶</button>
+          <div class="btn-row">
+            <button class="deck-btn" data-act="stop"    data-deck="A" title="Parar e voltar ao início">■</button>
+            <button class="deck-btn" data-act="fadein"  data-deck="A" title="Entrar com fade">↗</button>
+            <button class="deck-btn" data-act="fadeout" data-deck="A" title="Sair com fade">↘</button>
+            <button class="deck-btn" data-act="eject"   data-deck="A" title="Descarregar">⏏</button>
+          </div>
+        </div>
+      </div>
+      <div class="scrub"><input type="range" min="0" max="1000" value="0" data-role="scrub" data-deck="A"></div>
+    </div>
+
+    <!-- Centro: master + transição -->
+    <div class="master">
+      <div class="master-fader">
+        <div class="fader tall" data-role="fader" data-target="M">
+          <div class="fader-track"><div class="fader-fill"></div><div class="fader-knob"></div></div>
+          <span class="fader-val">90</span>
+        </div>
+        <span class="fader-label">MESTRE</span>
+      </div>
+      <div class="transition">
+        <button id="btnSwap" class="swap-btn">A ⇄ B<small>transição</small></button>
+        <div class="seg" id="fadeDur">
+          <button data-v="3">3s</button><button data-v="5" class="on">5s</button>
+          <button data-v="8">8s</button><button data-v="12">12s</button>
+        </div>
+        <button id="btnPanic" class="panic-btn" title="Silencia tudo imediatamente">SILÊNCIO</button>
+      </div>
+    </div>
+
+    <!-- Deck B -->
+    <div class="deck" id="deckB-el" data-deck="B">
+      <div class="deck-head">
+        <span class="deck-tag">B</span>
+        <div class="deck-meta">
+          <span class="deck-title" data-role="title">— vazio —</span>
+          <span class="deck-time" data-role="time">0:00 / 0:00</span>
+        </div>
+      </div>
+      <div class="deck-body">
+        <div class="fader" data-role="fader" data-target="B">
+          <div class="fader-track"><div class="fader-fill"></div><div class="fader-knob"></div></div>
+          <span class="fader-val">80</span>
+        </div>
+        <div class="deck-controls">
+          <button class="deck-btn play" data-act="toggle" data-deck="B">▶</button>
+          <div class="btn-row">
+            <button class="deck-btn" data-act="stop"    data-deck="B" title="Parar e voltar ao início">■</button>
+            <button class="deck-btn" data-act="fadein"  data-deck="B" title="Entrar com fade">↗</button>
+            <button class="deck-btn" data-act="fadeout" data-deck="B" title="Sair com fade">↘</button>
+            <button class="deck-btn" data-act="eject"   data-deck="B" title="Descarregar">⏏</button>
+          </div>
+        </div>
+      </div>
+      <div class="scrub"><input type="range" min="0" max="1000" value="0" data-role="scrub" data-deck="B"></div>
+    </div>
+
+    <!-- Canal Spotify -->
+    <div class="deck spotify-deck" id="spDeck">
+      <div class="deck-head">
+        <span class="deck-tag sp">S</span>
+        <div class="deck-meta">
+          <span class="deck-title" id="spTitle">Spotify desconectado</span>
+          <span class="deck-time" id="spDevice">—</span>
+        </div>
+      </div>
+      <div class="deck-body">
+        <div class="fader" data-role="fader" data-target="S">
+          <div class="fader-track"><div class="fader-fill"></div><div class="fader-knob"></div></div>
+          <span class="fader-val">70</span>
+        </div>
+        <div class="deck-controls">
+          <button class="deck-btn play" id="spToggle">▶</button>
+          <div class="btn-row">
+            <button class="deck-btn" id="spPrev" title="Anterior">⏮</button>
+            <button class="deck-btn" id="spNext" title="Próxima">⏭</button>
+            <button class="deck-btn" id="spDevices" title="Escolher aparelho de saída">Saída</button>
+          </div>
+        </div>
+      </div>
+      <div class="sp-hint" id="spHint">Tocar abre o app do Spotify.</div>
+    </div>
+
+  </div>
+</footer>
+
+<!-- ═══════════ DIÁLOGOS ═══════════ -->
+<div id="modalRoot" class="modal-root hidden">
+  <div class="modal-backdrop" data-close></div>
+  <div class="modal" role="dialog" aria-modal="true">
+    <div class="modal-head">
+      <h3 id="modalTitle">—</h3>
+      <button class="mini-btn" data-close>✕</button>
+    </div>
+    <div id="modalBody" class="modal-body"></div>
+    <div id="modalFoot" class="modal-foot"></div>
+  </div>
+</div>
+
+<div id="toast" class="toast hidden"></div>
+
+<input type="file" id="filePicker" accept="audio/*" class="hidden">
+<input type="file" id="jsonPicker" accept="application/json,.json" class="hidden">
+
+<script type="module" src="js/app.js"></script>
+</body>
+</html>

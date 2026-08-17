@@ -1,0 +1,17 @@
+{
+  "name": "Mestre de Harmonia",
+  "short_name": "Harmonia",
+  "description": "Painel de música para sessões maçônicas: roteiro por momento do ritual, links do Spotify e mesa de som de dois canais.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#080d18",
+  "theme_color": "#0a0f1c",
+  "lang": "pt-BR",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
