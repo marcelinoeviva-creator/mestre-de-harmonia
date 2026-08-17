@@ -549,8 +549,10 @@ async function checkSpotify(){
   }
 }
 
-/* A API responde e a conta é Premium: dá para comandar daqui. */
-const spCanControl = () => !!spProfile && !spFault && spProfile.product === 'premium';
+/* Dá para comandar daqui, a menos que a conta seja comprovadamente
+   grátis. Plano desconhecido não bloqueia nada: se não der, quem diz
+   é o próprio Spotify, com a mensagem certa. */
+const spCanControl = () => !!spProfile && !spFault && spProfile.product !== 'free';
 /* A API responde: dá para ler playlists (funciona também no plano grátis). */
 const spCanRead = () => !!spProfile && !spFault;
 
@@ -580,13 +582,13 @@ function paintSpotify(){
     cls = st.settings.clientId ? 'chip-warn' : 'chip-off';
   }else if(spChecking){ label_ = 'Verificando…';       cls = 'chip-warn'; }
   else if(spFault){     label_ = 'Spotify bloqueado';  cls = 'chip-warn'; }
-  else if(working){     label_ = spProfile.product === 'premium' ? 'Spotify' : 'Spotify (grátis)'; cls = 'chip-on'; }
+  else if(working){     label_ = spProfile.product === 'free' ? 'Spotify (grátis)' : 'Spotify'; cls = 'chip-on'; }
   else{                 label_ = 'Toque para conectar'; cls = 'chip-warn'; }
 
   chip.className = 'chip ' + cls;
   label.textContent = label_;
   deck.classList.toggle('off', !working);
-  faders.S?.enable(working && spProfile.product === 'premium');
+  faders.S?.enable(spCanControl());
 
   if(logged && spFault){
     $('#spTitle').textContent = 'Spotify recusou o acesso';
@@ -667,11 +669,12 @@ function diagBox(){
       return;
     }
     if(spProfile){
-      const premium = spProfile.product === 'premium';
+      const plano = spProfile.product || 'não informado';
+      const gratis = spProfile.product === 'free';
       box.append(el('div', { class:'notice' },
-        `Conectado como ${spProfile.display_name || spProfile.id} · plano ${spProfile.product}. ` +
-        (premium ? 'Importação e controle liberados.'
-                 : 'Importar playlists funciona; comandar a reprodução daqui exige Premium.')));
+        `Conectado como ${spProfile.display_name || spProfile.id} · plano ${plano}. ` +
+        (gratis ? 'Importar playlists funciona; comandar a reprodução daqui exige Premium.'
+                : 'Importação e controle liberados.')));
       return;
     }
     box.append(el('p', { class:'hint' }, 'Verificando a conexão…'));

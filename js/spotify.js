@@ -21,6 +21,7 @@ const AUTH   = 'https://accounts.spotify.com/authorize';
 const TOKEN  = 'https://accounts.spotify.com/api/token';
 const API    = 'https://api.spotify.com/v1';
 const SCOPES = [
+  'user-read-private',            // sem este, /me omite o plano (product) da conta
   'user-read-playback-state',
   'user-modify-playback-state',
   'user-read-currently-playing',
