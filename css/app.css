@@ -360,7 +360,12 @@ h1,h2,h3{ margin:0; font-family:var(--serif); font-weight:600; letter-spacing:.0
   -webkit-user-select:all; user-select:all; word-break:break-all;
 }
 .help strong{ color:var(--gold-hi); }
-.notice{ padding:11px 13px; border-radius:var(--r-sm); background:#1b2033; border-left:3px solid var(--gold); font-size:13.5px; line-height:1.55; color:#ccd6ea; }
+.notice{
+  padding:11px 13px; border-radius:var(--r-sm); background:#1b2033;
+  border-left:3px solid var(--gold); font-size:13.5px; line-height:1.55; color:#ccd6ea;
+  white-space:pre-line;                       /* mostra o texto cru do Spotify em linha própria */
+  -webkit-user-select:text; user-select:text; /* para o operador conseguir copiar o erro */
+}
 
 .sortrow{ display:flex; align-items:center; gap:8px; padding:8px 0; border-bottom:1px solid var(--line); }
 .sortrow .grow{ flex:1 1 auto; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }

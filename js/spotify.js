@@ -176,6 +176,11 @@ export class SpotifyError extends Error{
   constructor(msg, code){ super(msg); this.code = code; }
 }
 
+/** Texto cru do Spotify, anexado à explicação. Sem isto, um palpite
+    errado meu esconde a causa real e não há como diagnosticar. */
+const raw = (status, msg, reason) =>
+  `\n\n[Spotify ${status}${reason ? ' · ' + reason : ''}${msg ? ': ' + msg : ''}]`;
+
 async function call(clientId, path, { method = 'GET', body, query } = {}){
   const token = await ensureToken(clientId);
   const url = new URL(API + path);
@@ -201,7 +206,8 @@ async function call(clientId, path, { method = 'GET', body, query } = {}){
       throw new SpotifyError(
         'O Spotify não encontrou este item. Playlists geradas por ele — Descobertas da Semana, ' +
         'Daily Mix, Rádio, as "Feitas para você" e as editoriais do próprio Spotify — não podem ser ' +
-        'lidas por aplicativos. Só funcionam playlists criadas por você.', 'NOT_FOUND');
+        'lidas por aplicativos. Só funcionam playlists criadas por você.' +
+        raw(r.status, msg, reason), 'NOT_FOUND');
     if(r.status === 403 && /premium/i.test(msg + reason))
       throw new SpotifyError('O controle remoto do Spotify exige conta Premium.', 'PREMIUM');
     if(r.status === 403)
@@ -209,10 +215,11 @@ async function call(clientId, path, { method = 'GET', body, query } = {}){
         'O Spotify recusou o acesso (403). Quase sempre é uma destas duas: ' +
         '(1) o app no developer.spotify.com está em Development Mode e a conta com que você entrou aqui ' +
         'não é a mesma que criou o app — entre com a conta dona, ou adicione a sua em User Management; ' +
-        '(2) o app não está com "Web API" marcado em Settings → Edit.', 'FORBIDDEN');
+        '(2) o app não está com "Web API" marcado em Settings → Edit.' +
+        raw(r.status, msg, reason), 'FORBIDDEN');
     if(r.status === 429)
       throw new SpotifyError('Muitos comandos seguidos. Aguarde alguns segundos.', 'RATE');
-    throw new SpotifyError(msg, String(r.status));
+    throw new SpotifyError(msg + raw(r.status, msg, reason), String(r.status));
   }
   return data;
 }
