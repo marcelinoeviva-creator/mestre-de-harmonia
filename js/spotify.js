@@ -198,12 +198,22 @@ async function call(clientId, path, { method = 'GET', body, query } = {}){
       throw new SpotifyError('Nenhum aparelho ativo. Abra o app do Spotify no iPad e toque qualquer coisa por 1 segundo.', 'NO_DEVICE');
     if(r.status === 403 && /premium/i.test(msg + reason))
       throw new SpotifyError('O controle remoto do Spotify exige conta Premium.', 'PREMIUM');
+    if(r.status === 403)
+      throw new SpotifyError(
+        'O Spotify recusou o acesso (403). Quase sempre é uma destas duas: ' +
+        '(1) o app no developer.spotify.com está em Development Mode e a conta com que você entrou aqui ' +
+        'não é a mesma que criou o app — entre com a conta dona, ou adicione a sua em User Management; ' +
+        '(2) o app não está com "Web API" marcado em Settings → Edit.', 'FORBIDDEN');
     if(r.status === 429)
       throw new SpotifyError('Muitos comandos seguidos. Aguarde alguns segundos.', 'RATE');
     throw new SpotifyError(msg, String(r.status));
   }
   return data;
 }
+
+/** Quem está logado. Serve de teste real da conexão: se isto passa,
+    o token vale e a API responde de verdade. */
+export const me = cid => call(cid, '/me');
 
 export const playbackState = cid => call(cid, '/me/player');
 export const devices       = cid => call(cid, '/me/player/devices');

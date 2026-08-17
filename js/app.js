@@ -158,7 +158,7 @@ function wireConsole(){
 }
 
 async function spCommand(kind){
-  if(!SP.connected()) return toast('Conecte o Spotify em Ajustes para controlar daqui.');
+  if(!spCanControl()) return toast('Comandar o Spotify daqui exige conexão ativa e conta Premium.');
   const cid = st.settings.clientId;
   try{
     if(kind === 'pause')  await SP.pause(cid);
@@ -310,7 +310,7 @@ function trackRow(t, moment, i, total){
 }
 
 async function playTrack(t){
-  if(SP.connected() && t.spotifyId){
+  if(spCanControl() && t.spotifyId){
     try{
       await SP.playTrack(st.settings.clientId, t.spotifyId, spDeviceId || undefined);
       toast('Tocando: ' + t.title);
@@ -453,11 +453,13 @@ function pickFile(){
 /* ── Importar playlist ────────────────────── */
 
 function openImport(){
-  if(!SP.connected()){
+  if(!spCanRead()){
     return modal({
       title:'Importar playlist',
-      body:`Importar uma playlist inteira exige a conexão com o Spotify (Ajustes → Conectar Spotify).
-            <br><br>Sem conectar, você ainda adiciona peça por peça colando o link em <strong>+ Peça</strong>.`,
+      body: spFault
+        ? `<div class="notice">${esc(spFault)}</div>`
+        : `Importar uma playlist inteira exige a conexão com o Spotify (Ajustes → Conectar Spotify).
+           <br><br>Sem conectar, você ainda adiciona peça por peça colando o link em <strong>+ Peça</strong>.`,
       buttons:[
         { label:'Fechar', onClick: c => c() },
         { label:'Ir para Ajustes', kind:'primary', onClick: c => { c(); openSettings(); } }
@@ -505,20 +507,48 @@ function openImport(){
 
 /* ═══════════ Spotify ═══════════ */
 
+let spProfile = null;    // { display_name, product } quando a API responde de fato
+let spFault = '';        // motivo, quando o token existe mas a API recusa
+
 async function initSpotify(){
   SP.restore();
   const cid = st.settings.clientId;
   if(cid){
     try{
-      if(await SP.handleRedirect(cid) === 'ok') toast('Spotify conectado.');
+      if(await SP.handleRedirect(cid) === 'ok') toast('Spotify autorizado. Verificando…');
     }catch(e){ toast(e.message, true); }
   }
   paintSpotify();
-  if(SP.connected()){ pollSpotify(); setInterval(() => { if(!document.hidden) pollSpotify(); }, 5000); }
+  if(SP.connected()){
+    await checkSpotify();
+    pollSpotify();
+    setInterval(() => { if(!document.hidden) pollSpotify(); }, 5000);
+  }
 }
 
+/* Token válido não significa API liberada: em Development Mode o
+   Spotify devolve 403 em tudo. Só chamando /me dá para saber. */
+async function checkSpotify(){
+  spProfile = null; spFault = '';
+  if(!SP.connected()) return false;
+  try{
+    spProfile = await SP.me(st.settings.clientId);
+    paintSpotify();
+    return true;
+  }catch(e){
+    spFault = e.message;
+    paintSpotify();
+    return false;
+  }
+}
+
+/* A API responde e a conta é Premium: dá para comandar daqui. */
+const spCanControl = () => !!spProfile && !spFault && spProfile.product === 'premium';
+/* A API responde: dá para ler playlists (funciona também no plano grátis). */
+const spCanRead = () => !!spProfile && !spFault;
+
 async function pollSpotify(){
-  if(!SP.connected()) return;
+  if(!spCanControl()) return;
   try{
     spState = await SP.playbackState(st.settings.clientId);
     if(spState?.device){
@@ -533,12 +563,23 @@ async function pollSpotify(){
 function paintSpotify(){
   const chip = $('#spotifyStatus'), label = $('.chip-label', chip);
   const deck = $('#spDeck');
-  const on = SP.connected();
+  // Verde só quando a API respondeu de verdade (spProfile preenchido).
+  const on = SP.connected() && !spFault;
+  const working = on && !!spProfile;
 
-  chip.className = 'chip ' + (on ? 'chip-on' : st.settings.clientId ? 'chip-warn' : 'chip-off');
-  label.textContent = on ? 'Spotify' : st.settings.clientId ? 'Reconectar' : 'Modo link';
-  deck.classList.toggle('off', !on);
-  faders.S?.enable(on);
+  chip.className = 'chip ' + (working ? 'chip-on' : (spFault || st.settings.clientId) ? 'chip-warn' : 'chip-off');
+  label.textContent = spFault ? 'Spotify bloqueado'
+                    : working ? (spProfile.product === 'premium' ? 'Spotify' : 'Spotify (grátis)')
+                    : st.settings.clientId ? 'Verificando…' : 'Modo link';
+  deck.classList.toggle('off', !working);
+  faders.S?.enable(working && spProfile.product === 'premium');
+
+  if(spFault){
+    $('#spTitle').textContent = 'Spotify recusou o acesso';
+    $('#spDevice').textContent = 'toque aqui em cima para ver o motivo';
+    $('#spHint').textContent = 'Tocar abre o app do Spotify.';
+    return;
+  }
 
   if(!on){
     $('#spTitle').textContent = 'Spotify em modo link';
@@ -585,6 +626,40 @@ async function openDevices(){
 
 /* ═══════════ Ajustes ═══════════ */
 
+/* Estado real da conexão, com botão para testar de novo na hora. */
+function diagBox(){
+  const box = el('div');
+  const draw = () => {
+    box.innerHTML = '';
+    if(!SP.connected()){
+      box.append(el('p', { class:'hint' }, 'Não conectado. O app funciona em modo link.'));
+      return;
+    }
+    if(spFault){
+      box.append(
+        el('div', { class:'notice', style:'border-left-color:#e0524f' }, spFault),
+        el('button', { class:'ghost-btn', style:'margin-top:10px', onclick: async e => {
+            e.target.textContent = 'Testando…';
+            await checkSpotify(); draw();
+            toast(spFault ? 'Ainda bloqueado.' : 'Conexão funcionando agora.', !!spFault);
+        }}, 'Testar de novo')
+      );
+      return;
+    }
+    if(spProfile){
+      const premium = spProfile.product === 'premium';
+      box.append(el('div', { class:'notice' },
+        `Conectado como ${spProfile.display_name || spProfile.id} · plano ${spProfile.product}. ` +
+        (premium ? 'Importação e controle liberados.'
+                 : 'Importar playlists funciona; comandar a reprodução daqui exige Premium.')));
+      return;
+    }
+    box.append(el('p', { class:'hint' }, 'Verificando a conexão…'));
+  };
+  draw();
+  return box;
+}
+
 function openSettings(){
   const cid = input({ value: st.settings.clientId, placeholder:'cole aqui o Client ID' });
   const openApp = el('select', {},
@@ -610,6 +685,7 @@ function openSettings(){
       'Usando só Spotify, a única sobreposição possível é o <em>crossfade</em> dele: app do Spotify → Ajustes → Reprodução → Crossfade (até 12s).' }),
 
     el('h4', { style:'margin:20px 0 10px;color:var(--gold)' }, 'Conexão com o Spotify (opcional)'),
+    diagBox(),
     field('Client ID', cid,
       'Só é preciso se você quiser comandar o Spotify sem sair daqui e importar playlists inteiras. Exige conta <strong>Premium</strong>.'),
     connectRow,
