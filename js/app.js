@@ -213,6 +213,8 @@ function openOrganize(){
   const box = el('div');
   const draw = () => {
     box.innerHTML = '';
+    box.append(el('p', { class:'hint', style:'margin:0 0 12px' },
+      '↑ ↓ mudam a ordem do roteiro · ✎ renomeia · 🗑 apaga o momento'));
     st.moments.forEach((m, i) => {
       box.append(el('div', { class:'sortrow' },
         el('span', { class:'grow' }, m.name),

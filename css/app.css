@@ -157,6 +157,7 @@ h1,h2,h3{ margin:0; font-family:var(--serif); font-weight:600; letter-spacing:.0
   background:var(--panel); border:1px solid var(--line); color:var(--text);
 }
 .ghost-btn:active{ background:var(--panel-2); }
+.ghost-btn.wide{ width:100%; font-size:13.5px; color:var(--gold-hi); border-color:var(--gold-dim); }
 .mini-btn{
   width:36px; height:36px; border-radius:var(--r-sm); font-size:18px; line-height:1;
   background:var(--panel); border:1px solid var(--line);
