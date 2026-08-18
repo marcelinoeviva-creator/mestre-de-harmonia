@@ -48,6 +48,16 @@ export function parseLink(input){
   return null;
 }
 
+/** Todos os links de faixa achados num texto, na ordem, sem repetir.
+    Permite colar de uma vez o bloco de links que se juntou nas Notas. */
+export function parseLinks(text){
+  const ids = [];
+  const re = /(?:open\.spotify\.com\/(?:intl-[a-z-]+\/)?track\/|spotify:track:)([A-Za-z0-9]{22})/gi;
+  let m;
+  while((m = re.exec(text || ''))) if(!ids.includes(m[1])) ids.push(m[1]);
+  return ids;
+}
+
 export const webUrl = (type, id) => `https://open.spotify.com/${type}/${id}`;
 export const uri    = (type, id) => `spotify:${type}:${id}`;
 

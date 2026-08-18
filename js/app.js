@@ -394,7 +394,8 @@ function openTrackEditor(existing){
   const body = el('div', {},
     existing ? field('Momento', fMoment, 'Troque aqui para mover a peça de lugar no roteiro.') : null,
     field('Link do Spotify', fLink,
-      'No app do Spotify: <strong>⋯ → Compartilhar → Copiar link</strong>. O título é preenchido sozinho.'),
+      'No app do Spotify: <strong>⋯ → Compartilhar → Copiar link</strong>. O título é preenchido sozinho.' +
+      (existing ? '' : '<br>Pode colar <strong>vários links de uma vez</strong> — vira uma peça para cada.')),
     field('Nome da peça', fTitle),
     field('Compositor / intérprete', fArtist),
     field('Anotação de execução', fNote, 'Sua deixa: quando entra, quando corta.'),
@@ -413,6 +414,26 @@ function openTrackEditor(existing){
     }});
   }
   buttons.push({ label:'Salvar', kind:'primary', onClick: async c => {
+    // Vários links colados de uma vez viram várias peças.
+    const varios = SP.parseLinks(fLink.value);
+    if(!existing && varios.length > 1){
+      const btn = $('#modalFoot .primary-btn');
+      let n = 0;
+      for(const id of varios){
+        if(btn) btn.textContent = `Buscando ${++n} de ${varios.length}…`;
+        const info = await SP.oembed('track', id);
+        S.addTrack(m.id, {
+          title: info?.title || 'Sem título',
+          artwork: info?.artwork || '',
+          spotifyId: id,
+          spotifyUrl: SP.webUrl('track', id)
+        });
+      }
+      c(); paintMoments(); paintTracks();
+      toast(`${varios.length} peças adicionadas em "${m.name}".`);
+      return;
+    }
+
     const p = SP.parseLink(fLink.value);
     const data = {
       title: fTitle.value.trim() || 'Sem título',
