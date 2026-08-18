@@ -33,11 +33,15 @@ const tracks = {};
 
 for(const linha of linhas){
   const [nomeMomento, link, nota] = linha.split('::').map(x => (x || '').trim());
-  const trackId = idDoLink(link || '');
-  if(!trackId){ console.warn('  ! link inválido, pulando:', linha); continue; }
-
   let m = moments.find(x => x.name.toLowerCase() === nomeMomento.toLowerCase());
   if(!m){ m = { id: uid(), name: nomeMomento, trackIds: [] }; moments.push(m); }
+
+  // Momento sem link entra vazio: há passos do ritual sem música, e a
+  // ordem do roteiro só faz sentido se eles aparecerem no lugar deles.
+  if(!link){ console.log(`  ${m.name}  ←  (sem música)`); continue; }
+
+  const trackId = idDoLink(link);
+  if(!trackId){ console.warn('  ! link inválido, pulando:', linha); continue; }
 
   const info = await titulo(trackId);
   const id = uid();

@@ -4,30 +4,113 @@
   "moments": [
     {
       "id": "r0001",
-      "name": "Abertura dos Trabalhos",
+      "name": "Hino de Abertura",
       "trackIds": [
         "r0002"
       ]
     },
     {
       "id": "r0003",
-      "name": "Palavra Início",
+      "name": "Templo Coberto",
       "trackIds": [
         "r0004"
       ]
     },
     {
       "id": "r0005",
-      "name": "Templo Coberto",
+      "name": "Cerimônia das Luzes",
       "trackIds": [
         "r0006"
       ]
     },
     {
       "id": "r0007",
-      "name": "Acendimento das Luzes",
+      "name": "Transmissão da Palavra",
       "trackIds": [
         "r0008"
+      ]
+    },
+    {
+      "id": "r0009",
+      "name": "Abertura do Livro da Lei",
+      "trackIds": [
+        "r000a"
+      ]
+    },
+    {
+      "id": "r000b",
+      "name": "Bateria, Saudação e \"Sentamos, Meus Irmãos\"",
+      "trackIds": [
+        "r000c"
+      ]
+    },
+    {
+      "id": "r000d",
+      "name": "Balaústre: \"Cumpri o Vosso Dever\" — Assinaturas",
+      "trackIds": [
+        "r000e"
+      ]
+    },
+    {
+      "id": "r000f",
+      "name": "Saco de Propostas e Tronco",
+      "trackIds": []
+    },
+    {
+      "id": "r000g",
+      "name": "Otavio Trabalho",
+      "trackIds": [
+        "r000h",
+        "r000i"
+      ]
+    },
+    {
+      "id": "r000j",
+      "name": "Tronco para Conferência",
+      "trackIds": [
+        "r000k"
+      ]
+    },
+    {
+      "id": "r000l",
+      "name": "Encerrar a Sessão — Sinal do Rito",
+      "trackIds": [
+        "r000m"
+      ]
+    },
+    {
+      "id": "r000n",
+      "name": "Retorno da Palavra Sagrada",
+      "trackIds": [
+        "r000o"
+      ]
+    },
+    {
+      "id": "r000p",
+      "name": "Fechamento do Livro da Lei",
+      "trackIds": [
+        "r000q"
+      ]
+    },
+    {
+      "id": "r000r",
+      "name": "Depois do Fechamento — Movimentação",
+      "trackIds": [
+        "r000s"
+      ]
+    },
+    {
+      "id": "r000t",
+      "name": "Amortecimento das Luzes",
+      "trackIds": [
+        "r000u"
+      ]
+    },
+    {
+      "id": "r000v",
+      "name": "Saída — Meia-Noite",
+      "trackIds": [
+        "r000w"
       ]
     }
   ],
@@ -39,13 +122,133 @@
       "note": "",
       "spotifyId": "1FXjGIUWuA6F89OQzSPAXa",
       "spotifyUrl": "https://open.spotify.com/track/1FXjGIUWuA6F89OQzSPAXa",
-      "artwork": "https://image-cdn-ak.spotifycdn.com/image/ab67616d00001e02a52c39ea5b07566be1400e48",
+      "artwork": "https://image-cdn-fa.spotifycdn.com/image/ab67616d00001e02a52c39ea5b07566be1400e48",
       "fileKey": "",
       "fileName": "",
       "durationMs": 0
     },
     "r0004": {
       "id": "r0004",
+      "title": "Clocks",
+      "artist": "",
+      "note": "",
+      "spotifyId": "64SAjq81q1HBcfj1Dsm0Bf",
+      "spotifyUrl": "https://open.spotify.com/track/64SAjq81q1HBcfj1Dsm0Bf",
+      "artwork": "https://image-cdn-ak.spotifycdn.com/image/ab67616d00001e022b6387cab08427500da68287",
+      "fileKey": "",
+      "fileName": "",
+      "durationMs": 0
+    },
+    "r0006": {
+      "id": "r0006",
+      "title": "On the Nature of Daylight",
+      "artist": "",
+      "note": "",
+      "spotifyId": "56oReVXIfUO9xkX7pHmEU0",
+      "spotifyUrl": "https://open.spotify.com/track/56oReVXIfUO9xkX7pHmEU0",
+      "artwork": "https://image-cdn-ak.spotifycdn.com/image/ab67616d00001e02e2821b1458ab996fdf2c47ad",
+      "fileKey": "",
+      "fileName": "",
+      "durationMs": 0
+    },
+    "r0008": {
+      "id": "r0008",
+      "title": "We Are the Champions",
+      "artist": "",
+      "note": "",
+      "spotifyId": "0lm6YrlOU5rLGZSPe4PQsG",
+      "spotifyUrl": "https://open.spotify.com/track/0lm6YrlOU5rLGZSPe4PQsG",
+      "artwork": "https://image-cdn-ak.spotifycdn.com/image/ab67616d00001e02cc0e60a4f4d37716ef4feedd",
+      "fileKey": "",
+      "fileName": "",
+      "durationMs": 0
+    },
+    "r000a": {
+      "id": "r000a",
+      "title": "Now We are Free",
+      "artist": "",
+      "note": "",
+      "spotifyId": "6OLgebma3uuh5KDG5ZXjF5",
+      "spotifyUrl": "https://open.spotify.com/track/6OLgebma3uuh5KDG5ZXjF5",
+      "artwork": "https://image-cdn-fa.spotifycdn.com/image/ab67616d00001e02a631ba47c5890341551b5d11",
+      "fileKey": "",
+      "fileName": "",
+      "durationMs": 0
+    },
+    "r000c": {
+      "id": "r000c",
+      "title": "saman",
+      "artist": "",
+      "note": "",
+      "spotifyId": "5RqKo9P4DLA0bVyY70cWkr",
+      "spotifyUrl": "https://open.spotify.com/track/5RqKo9P4DLA0bVyY70cWkr",
+      "artwork": "https://image-cdn-ak.spotifycdn.com/image/ab67616d00001e025c207f23ab7902473230ec0f",
+      "fileKey": "",
+      "fileName": "",
+      "durationMs": 0
+    },
+    "r000e": {
+      "id": "r000e",
+      "title": "One",
+      "artist": "",
+      "note": "",
+      "spotifyId": "6pPdo5mFzT92sqdT0cFgoR",
+      "spotifyUrl": "https://open.spotify.com/track/6pPdo5mFzT92sqdT0cFgoR",
+      "artwork": "https://image-cdn-fa.spotifycdn.com/image/ab67616d00001e02b316eb47785ac79cb7d289c0",
+      "fileKey": "",
+      "fileName": "",
+      "durationMs": 0
+    },
+    "r000h": {
+      "id": "r000h",
+      "title": "Paganini: 24 Caprices, Op. 1: No. 24 in A Minor",
+      "artist": "",
+      "note": "",
+      "spotifyId": "6cC6h5E351deEGFd7Kh9uy",
+      "spotifyUrl": "https://open.spotify.com/track/6cC6h5E351deEGFd7Kh9uy",
+      "artwork": "https://image-cdn-ak.spotifycdn.com/image/ab67616d00001e02d612003e37c4cdc82f39eda7",
+      "fileKey": "",
+      "fileName": "",
+      "durationMs": 0
+    },
+    "r000i": {
+      "id": "r000i",
+      "title": "Here Comes The Sun - Guitar Instrumental",
+      "artist": "",
+      "note": "",
+      "spotifyId": "3j7xkdIiEOA1f8YUrQgiZd",
+      "spotifyUrl": "https://open.spotify.com/track/3j7xkdIiEOA1f8YUrQgiZd",
+      "artwork": "https://image-cdn-ak.spotifycdn.com/image/ab67616d00001e02b250ecf148a3c336869e826a",
+      "fileKey": "",
+      "fileName": "",
+      "durationMs": 0
+    },
+    "r000k": {
+      "id": "r000k",
+      "title": "Clocks",
+      "artist": "",
+      "note": "\"Vossas ordens foram cumpridas\"",
+      "spotifyId": "64SAjq81q1HBcfj1Dsm0Bf",
+      "spotifyUrl": "https://open.spotify.com/track/64SAjq81q1HBcfj1Dsm0Bf",
+      "artwork": "https://image-cdn-ak.spotifycdn.com/image/ab67616d00001e022b6387cab08427500da68287",
+      "fileKey": "",
+      "fileName": "",
+      "durationMs": 0
+    },
+    "r000m": {
+      "id": "r000m",
+      "title": "Oceanos | Violino Instrumental",
+      "artist": "",
+      "note": "",
+      "spotifyId": "7i503Kue94eooplMpZC5CB",
+      "spotifyUrl": "https://open.spotify.com/track/7i503Kue94eooplMpZC5CB",
+      "artwork": "https://image-cdn-ak.spotifycdn.com/image/ab67616d00001e02444074e69d3a7a03b14982ad",
+      "fileKey": "",
+      "fileName": "",
+      "durationMs": 0
+    },
+    "r000o": {
+      "id": "r000o",
       "title": "Heart of Courage",
       "artist": "",
       "note": "",
@@ -56,26 +259,50 @@
       "fileName": "",
       "durationMs": 0
     },
-    "r0006": {
-      "id": "r0006",
-      "title": "Spring 1 - 2012",
+    "r000q": {
+      "id": "r000q",
+      "title": "Elysium",
       "artist": "",
       "note": "",
-      "spotifyId": "5xbuJuQsTVheVZvX2AJVIv",
-      "spotifyUrl": "https://open.spotify.com/track/5xbuJuQsTVheVZvX2AJVIv",
-      "artwork": "https://image-cdn-ak.spotifycdn.com/image/ab67616d00001e027ead2c02fb48674b6bac7cc4",
+      "spotifyId": "4KscmBsFFjcfnD3XbYIklO",
+      "spotifyUrl": "https://open.spotify.com/track/4KscmBsFFjcfnD3XbYIklO",
+      "artwork": "https://image-cdn-ak.spotifycdn.com/image/ab67616d00001e027fb295f05d69310966eef394",
       "fileKey": "",
       "fileName": "",
       "durationMs": 0
     },
-    "r0008": {
-      "id": "r0008",
-      "title": "O Magnum Mysterium",
+    "r000s": {
+      "id": "r000s",
+      "title": "Spiegel im spiegel",
       "artist": "",
       "note": "",
-      "spotifyId": "1pap91uPy1SiwLgnVl5xf3",
-      "spotifyUrl": "https://open.spotify.com/track/1pap91uPy1SiwLgnVl5xf3",
-      "artwork": "https://image-cdn-ak.spotifycdn.com/image/ab67616d00001e0276935ef23cfbdf585b1087c2",
+      "spotifyId": "7zHd9LxIZB8WKosSWN9Umj",
+      "spotifyUrl": "https://open.spotify.com/track/7zHd9LxIZB8WKosSWN9Umj",
+      "artwork": "https://image-cdn-ak.spotifycdn.com/image/ab67616d00001e02172bf9b9bd01946bf3f7785c",
+      "fileKey": "",
+      "fileName": "",
+      "durationMs": 0
+    },
+    "r000u": {
+      "id": "r000u",
+      "title": ".Goetia.",
+      "artist": "",
+      "note": "",
+      "spotifyId": "3CfjxPZAeKo00Hm8Y6FFok",
+      "spotifyUrl": "https://open.spotify.com/track/3CfjxPZAeKo00Hm8Y6FFok",
+      "artwork": "https://image-cdn-fa.spotifycdn.com/image/ab67616d00001e02341ff8b627a335641e46ae8b",
+      "fileKey": "",
+      "fileName": "",
+      "durationMs": 0
+    },
+    "r000w": {
+      "id": "r000w",
+      "title": "Hino de Encerramento do Rito Brasileiro",
+      "artist": "",
+      "note": "",
+      "spotifyId": "1WnIZSuM3qSpSVND4XqPE7",
+      "spotifyUrl": "https://open.spotify.com/track/1WnIZSuM3qSpSVND4XqPE7",
+      "artwork": "https://image-cdn-ak.spotifycdn.com/image/ab67616d00001e02a52c39ea5b07566be1400e48",
       "fileKey": "",
       "fileName": "",
       "durationMs": 0
