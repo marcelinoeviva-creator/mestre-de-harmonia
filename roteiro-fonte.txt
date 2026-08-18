@@ -8,3 +8,6 @@
 # Para gerar: node tools/build-roteiro.mjs
 
 Abertura dos Trabalhos :: https://open.spotify.com/track/1FXjGIUWuA6F89OQzSPAXa
+Palavra Início :: https://open.spotify.com/track/4JtvyWkWQTPVcroZf8JJkp
+Templo Coberto :: https://open.spotify.com/track/5xbuJuQsTVheVZvX2AJVIv
+Acendimento das Luzes :: https://open.spotify.com/track/1pap91uPy1SiwLgnVl5xf3

@@ -8,6 +8,27 @@
       "trackIds": [
         "r0002"
       ]
+    },
+    {
+      "id": "r0003",
+      "name": "Palavra Início",
+      "trackIds": [
+        "r0004"
+      ]
+    },
+    {
+      "id": "r0005",
+      "name": "Templo Coberto",
+      "trackIds": [
+        "r0006"
+      ]
+    },
+    {
+      "id": "r0007",
+      "name": "Acendimento das Luzes",
+      "trackIds": [
+        "r0008"
+      ]
     }
   ],
   "tracks": {
@@ -19,6 +40,42 @@
       "spotifyId": "1FXjGIUWuA6F89OQzSPAXa",
       "spotifyUrl": "https://open.spotify.com/track/1FXjGIUWuA6F89OQzSPAXa",
       "artwork": "https://image-cdn-ak.spotifycdn.com/image/ab67616d00001e02a52c39ea5b07566be1400e48",
+      "fileKey": "",
+      "fileName": "",
+      "durationMs": 0
+    },
+    "r0004": {
+      "id": "r0004",
+      "title": "Heart of Courage",
+      "artist": "",
+      "note": "",
+      "spotifyId": "4JtvyWkWQTPVcroZf8JJkp",
+      "spotifyUrl": "https://open.spotify.com/track/4JtvyWkWQTPVcroZf8JJkp",
+      "artwork": "https://image-cdn-ak.spotifycdn.com/image/ab67616d00001e02369c295afeb6a7cbc40bed64",
+      "fileKey": "",
+      "fileName": "",
+      "durationMs": 0
+    },
+    "r0006": {
+      "id": "r0006",
+      "title": "Spring 1 - 2012",
+      "artist": "",
+      "note": "",
+      "spotifyId": "5xbuJuQsTVheVZvX2AJVIv",
+      "spotifyUrl": "https://open.spotify.com/track/5xbuJuQsTVheVZvX2AJVIv",
+      "artwork": "https://image-cdn-ak.spotifycdn.com/image/ab67616d00001e027ead2c02fb48674b6bac7cc4",
+      "fileKey": "",
+      "fileName": "",
+      "durationMs": 0
+    },
+    "r0008": {
+      "id": "r0008",
+      "title": "O Magnum Mysterium",
+      "artist": "",
+      "note": "",
+      "spotifyId": "1pap91uPy1SiwLgnVl5xf3",
+      "spotifyUrl": "https://open.spotify.com/track/1pap91uPy1SiwLgnVl5xf3",
+      "artwork": "https://image-cdn-ak.spotifycdn.com/image/ab67616d00001e0276935ef23cfbdf585b1087c2",
       "fileKey": "",
       "fileName": "",
       "durationMs": 0
