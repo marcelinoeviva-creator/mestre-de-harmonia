@@ -1,0 +1,10 @@
+# Roteiro da Loja — origem do roteiro.json publicado.
+#
+# Uma peça por linha, no formato:
+#   Momento :: link do Spotify :: anotação (opcional)
+#
+# O título e a capa são buscados no Spotify pelo build; não precisa
+# escrever o nome da música. Linhas com # são ignoradas.
+# Para gerar: node tools/build-roteiro.mjs
+
+Abertura dos Trabalhos :: https://open.spotify.com/track/1FXjGIUWuA6F89OQzSPAXa

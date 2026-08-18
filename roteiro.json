@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "lodge": "A∴R∴L∴S∴ Colunas de Pedras Grandes",
+  "moments": [
+    {
+      "id": "r0001",
+      "name": "Abertura dos Trabalhos",
+      "trackIds": [
+        "r0002"
+      ]
+    }
+  ],
+  "tracks": {
+    "r0002": {
+      "id": "r0002",
+      "title": "Hino de Abertura do Rito Brasileiro",
+      "artist": "",
+      "note": "",
+      "spotifyId": "1FXjGIUWuA6F89OQzSPAXa",
+      "spotifyUrl": "https://open.spotify.com/track/1FXjGIUWuA6F89OQzSPAXa",
+      "artwork": "https://image-cdn-ak.spotifycdn.com/image/ab67616d00001e02a52c39ea5b07566be1400e48",
+      "fileKey": "",
+      "fileName": "",
+      "durationMs": 0
+    }
+  }
+}

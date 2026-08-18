@@ -808,7 +808,8 @@ function openSettings(){
     el('p', { class:'hint' }, 'Guarde seu roteiro. O JSON leva momentos, peças, links e anotações — os arquivos de áudio ficam só no iPad e precisam ser reimportados.'),
     el('div', { class:'field row', style:'margin-top:10px' },
       el('button', { class:'ghost-btn', onclick: doExport }, 'Exportar roteiro'),
-      el('button', { class:'ghost-btn', onclick: doImport }, 'Importar roteiro')
+      el('button', { class:'ghost-btn', onclick: doImport }, 'Importar arquivo'),
+      el('button', { class:'ghost-btn', onclick: openImportUrl }, 'Receber roteiro')
     ),
     el('p', { class:'hint', id:'storageLine' }, ''),
 
@@ -834,6 +835,48 @@ function openSettings(){
     if(!i) return;
     const line = $('#storageLine');
     if(line) line.textContent = `Espaço usado pelo app no iPad: ${(i.usage/1048576).toFixed(1)} MB de ${(i.quota/1073741824).toFixed(1)} GB disponíveis.`;
+  });
+}
+
+/* Recebe um roteiro publicado num endereço. Existe porque passar um
+   arquivo JSON para dentro do iPad é trabalhoso, e o caminho normal de
+   montar o repertório passou a ser preparar tudo fora e mandar pronto. */
+function openImportUrl(){
+  const fUrl = input({
+    value: new URL('roteiro.json', location.href).href,
+    placeholder:'https://…/roteiro.json'
+  });
+  const status = el('p', { class:'hint' }, '');
+
+  const puxar = async merge => {
+    status.textContent = 'Buscando…';
+    try{
+      const r = await fetch(fUrl.value.trim(), { cache:'no-store' });
+      if(!r.ok) throw new Error(`O endereço respondeu ${r.status}.`);
+      const texto = await r.text();
+      const n = S.importJSON(texto, { merge });
+      closeModal(); renderAll();
+      toast(merge ? `${n} peça(s) somada(s) ao roteiro.` : 'Roteiro substituído.');
+    }catch(e){
+      status.textContent = '';
+      toast('Não deu para receber: ' + e.message, true);
+    }
+  };
+
+  modal({
+    title:'Receber roteiro',
+    body: el('div', {},
+      field('Endereço do roteiro', fUrl,
+        'Um arquivo .json preparado fora do iPad. O padrão é o roteiro publicado junto com o app.'),
+      el('div', { class:'notice' },
+        'Somar mantém o que você já montou e só acrescenta o que falta, casando os momentos pelo nome. ' +
+        'Substituir apaga o roteiro atual e coloca o novo no lugar.'),
+      status),
+    buttons:[
+      { label:'Cancelar', onClick: c => c() },
+      { label:'Substituir tudo', kind:'danger', onClick: () => puxar(false) },
+      { label:'Somar ao meu', kind:'primary', onClick: () => puxar(true) }
+    ]
   });
 }
 

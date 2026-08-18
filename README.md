@@ -81,6 +81,27 @@ Spotify nunca passa pelo app.
 
 ---
 
+## Receber um roteiro pronto
+
+Como a importação de playlists do Spotify é barrada pela API, o repertório pode ser
+preparado fora do iPad e entregue pronto.
+
+O roteiro nasce de `roteiro-fonte.txt`, uma linha por peça:
+
+```
+Momento :: link do Spotify :: anotação (opcional)
+```
+
+Os títulos e capas são buscados no build; não é preciso escrever o nome da música.
+
+```bash
+node tools/build-roteiro.mjs
+```
+
+Isso gera `roteiro.json`, que vai publicado junto com o app. No iPad:
+*Ajustes → Receber roteiro → Somar ao meu*. Somar casa os momentos pelo nome, mantém o
+que já estava montado e ignora peças repetidas — dá para receber quantas vezes quiser.
+
 ## Cópia de segurança
 
 *Ajustes → Exportar roteiro* gera um JSON com momentos, peças, links e anotações.
