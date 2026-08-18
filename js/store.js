@@ -229,9 +229,36 @@ export function exportJSON(){
   return JSON.stringify(copy, null, 2);
 }
 
-export function importJSON(text){
+/** merge = true soma ao roteiro atual, casando momentos pelo nome e
+    pulando peças que já existem. Sem isso, receber um roteiro pronto
+    apagaria o que o operador já tinha montado à mão. */
+export function importJSON(text, { merge = false } = {}){
   const incoming = JSON.parse(text);
   if(!incoming.moments || !incoming.tracks) throw new Error('Arquivo fora do formato esperado.');
+
+  if(merge){
+    let novos = 0;
+    for(const im of incoming.moments){
+      const nome = (im.name || '').trim();
+      let alvo = state.moments.find(m => m.name.trim().toLowerCase() === nome.toLowerCase());
+      if(!alvo) alvo = addMoment(nome);
+      const jaTem = new Set(alvo.trackIds.map(id => state.tracks[id]?.spotifyId).filter(Boolean));
+      for(const tid of im.trackIds || []){
+        const t = incoming.tracks[tid];
+        if(!t) continue;
+        if(t.spotifyId && jaTem.has(t.spotifyId)) continue;
+        const copia = { ...t };
+        delete copia.id;                       // id novo: não colidir com o que existe
+        copia.fileKey = ''; copia.fileName = '';
+        addTrack(alvo.id, copia);
+        if(t.spotifyId) jaTem.add(t.spotifyId);
+        novos++;
+      }
+    }
+    save();
+    return novos;
+  }
+
   state.lodge   = incoming.lodge || state.lodge;
   state.moments = incoming.moments;
   state.tracks  = incoming.tracks;
@@ -242,4 +269,5 @@ export function importJSON(text){
   }
   state.selectedMomentId = state.moments[0]?.id || null;
   save();
+  return Object.keys(state.tracks).length;
 }
