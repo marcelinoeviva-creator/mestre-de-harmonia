@@ -13,14 +13,23 @@ const uid = () => 'r' + (++n).toString(36).padStart(4, '0');
 
 const idDoLink = s => (s.match(/track[/:]([A-Za-z0-9]{22})/) || [])[1] || null;
 
-async function titulo(id){
+const espera = ms => new Promise(r => setTimeout(r, ms));
+
+/* O oEmbed recusa chamadas em rajada. Sem repetição, um título falha
+   em silêncio e vai parar no roteiro como "Sem título". */
+async function titulo(id, tentativas = 4){
   const url = `https://open.spotify.com/oembed?url=https://open.spotify.com/track/${id}`;
-  try{
-    const r = await fetch(url);
-    if(!r.ok) return null;
-    const j = await r.json();
-    return { title: j.title || '', artwork: j.thumbnail_url || '' };
-  }catch(e){ return null; }
+  for(let i = 0; i < tentativas; i++){
+    try{
+      const r = await fetch(url);
+      if(r.ok){
+        const j = await r.json();
+        if(j.title) return { title: j.title, artwork: j.thumbnail_url || '' };
+      }
+    }catch(e){ /* tenta de novo */ }
+    await espera(700 * (i + 1));
+  }
+  return null;
 }
 
 const linhas = (await readFile(FONTE, 'utf8'))
@@ -30,6 +39,7 @@ const linhas = (await readFile(FONTE, 'utf8'))
 
 const moments = [];
 const tracks = {};
+const falhas = [];
 
 for(const linha of linhas){
   const [nomeMomento, link, nota] = linha.split('::').map(x => (x || '').trim());
@@ -44,6 +54,8 @@ for(const linha of linhas){
   if(!trackId){ console.warn('  ! link inválido, pulando:', linha); continue; }
 
   const info = await titulo(trackId);
+  if(!info){ falhas.push(`${nomeMomento} :: ${trackId}`); }
+  await espera(250);                       // não estoura o limite do oEmbed
   const id = uid();
   tracks[id] = {
     id,
@@ -57,6 +69,12 @@ for(const linha of linhas){
   };
   m.trackIds.push(id);
   console.log(`  ${m.name}  ←  ${tracks[id].title}`);
+}
+
+if(falhas.length){
+  console.error(`\nNÃO PUBLIQUE: ${falhas.length} título(s) não vieram do Spotify:`);
+  for(const f of falhas) console.error('  ' + f);
+  process.exit(1);
 }
 
 await writeFile(DESTINO, JSON.stringify({ version: 1, lodge: LOJA, moments, tracks }, null, 2) + '\n');
