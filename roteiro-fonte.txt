@@ -10,8 +10,8 @@
 # Para gerar: node tools/build-roteiro.mjs
 
 Hino de Abertura :: https://open.spotify.com/track/1FXjGIUWuA6F89OQzSPAXa
-Templo Coberto :: https://open.spotify.com/track/64SAjq81q1HBcfj1Dsm0Bf
-Cerimônia das Luzes :: https://open.spotify.com/track/56oReVXIfUO9xkX7pHmEU0
+Templo Coberto :: https://open.spotify.com/track/5xbuJuQsTVheVZvX2AJVIv
+Cerimônia das Luzes :: https://open.spotify.com/track/7zHd9LxIZB8WKosSWN9Umj
 Transmissão da Palavra :: https://open.spotify.com/track/0lm6YrlOU5rLGZSPe4PQsG
 Abertura do Livro da Lei :: https://open.spotify.com/track/6OLgebma3uuh5KDG5ZXjF5
 Bateria, Saudação e "Sentamos, Meus Irmãos" :: https://open.spotify.com/track/5RqKo9P4DLA0bVyY70cWkr
@@ -19,9 +19,9 @@ Balaústre: "Cumpri o Vosso Dever" — Assinaturas :: https://open.spotify.com/t
 Saco de Propostas e Tronco ::
 Otavio Trabalho :: https://open.spotify.com/track/6cC6h5E351deEGFd7Kh9uy
 Otavio Trabalho :: https://open.spotify.com/track/3j7xkdIiEOA1f8YUrQgiZd
-Tronco para Conferência :: https://open.spotify.com/track/64SAjq81q1HBcfj1Dsm0Bf :: "Vossas ordens foram cumpridas"
+Tronco para Conferência :: https://open.spotify.com/track/2m1UFAegUhfBemFiFtnzNI :: "Vossas ordens foram cumpridas"
 Encerrar a Sessão — Sinal do Rito :: https://open.spotify.com/track/7i503Kue94eooplMpZC5CB
-Retorno da Palavra Sagrada :: https://open.spotify.com/track/4JtvyWkWQTPVcroZf8JJkp
+Retorno da Palavra Sagrada :: https://open.spotify.com/track/6KOBMsYaTl9ehUTF3NcX3c
 Fechamento do Livro da Lei :: https://open.spotify.com/track/4KscmBsFFjcfnD3XbYIklO
 Depois do Fechamento — Movimentação :: https://open.spotify.com/track/7zHd9LxIZB8WKosSWN9Umj
 Amortecimento das Luzes :: https://open.spotify.com/track/3CfjxPZAeKo00Hm8Y6FFok
