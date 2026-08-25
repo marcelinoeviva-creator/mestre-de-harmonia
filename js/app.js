@@ -434,13 +434,22 @@ function openTrackEditor(existing){
   const fNote   = input({ value: t.note   || '', placeholder:'Ex.: entrar no 3º golpe do malhete' });
 
   const fileLabel = el('span', {}, t.fileName || 'nenhum arquivo');
-  const btnFile = el('button', { class:'ghost-btn', onclick: async () => {
-    const file = await pickFile();
+
+  const escolher = async todos => {
+    const file = await pickFile(todos);
     if(!file) return;
+    fileLabel.textContent = 'verificando…';
+    if(!await audioLegivel(file)){
+      fileLabel.textContent = t.fileName || 'nenhum arquivo';
+      return toast('Este arquivo não toca. Escolha um MP3, M4A ou WAV.', true);
+    }
     pendingFile = { blob: file, name: file.name };
     fileLabel.textContent = file.name;
     if(!fTitle.value) fTitle.value = file.name.replace(/\.[^.]+$/, '');
-  }}, 'Escolher arquivo…');
+  };
+
+  const btnFile = el('button', { class:'ghost-btn', onclick: () => escolher(false) }, 'Escolher arquivo…');
+  const btnFileAll = el('button', { class:'ghost-btn', onclick: () => escolher(true) }, 'Mostrar todos');
 
   let foundArt = t.artwork || '';
   const lookup = async () => {
@@ -466,9 +475,10 @@ function openTrackEditor(existing){
     field('Anotação de execução', fNote, 'Sua deixa: quando entra, quando corta.'),
     el('div', { class:'field' },
       el('label', {}, 'Arquivo de áudio (para sobrepor duas faixas)'),
-      el('div', { class:'field row' }, btnFile, el('div', { class:'hint', style:'flex:1' }, fileLabel)),
-      el('p', { class:'hint' },
-        'Só peças com arquivo podem ir para os decks A e B e tocar ao mesmo tempo. O arquivo fica guardado dentro do app, no iPad.')
+      el('div', { class:'field row' }, btnFile, btnFileAll, el('div', { class:'hint', style:'flex:1' }, fileLabel)),
+      el('p', { class:'hint', html:
+        'Só peças com arquivo podem ir para os decks A e B e tocar ao mesmo tempo. O arquivo fica guardado dentro do app, no iPad.' +
+        '<br>Se o arquivo aparecer apagado no seletor, use <strong>Mostrar todos</strong>.' })
     )
   );
 
@@ -527,12 +537,26 @@ function openTrackEditor(existing){
   modal({ title: existing ? 'Editar peça' : 'Nova peça', body, buttons });
 }
 
-function pickFile(){
+function pickFile(todos = false){
   return new Promise(res => {
-    const p = $('#filePicker');
+    const p = $(todos ? '#filePickerAll' : '#filePicker');
     p.value = '';
     p.onchange = () => res(p.files[0] || null);
     p.click();
+  });
+}
+
+/** Confere se o arquivo escolhido realmente toca, antes de guardá-lo.
+    Sem filtro no seletor, dá para escolher qualquer coisa. */
+function audioLegivel(blob){
+  return new Promise(res => {
+    const url = URL.createObjectURL(blob);
+    const a = new Audio();
+    const fim = ok => { URL.revokeObjectURL(url); a.src = ''; res(ok); };
+    a.onloadedmetadata = () => fim(true);
+    a.onerror = () => fim(false);
+    a.src = url;
+    setTimeout(() => fim(true), 5000);   // metadados lentos não reprovam
   });
 }
 
