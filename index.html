@@ -198,7 +198,12 @@
 
 <div id="toast" class="toast hidden"></div>
 
-<input type="file" id="filePicker" accept="audio/*" class="hidden">
+<!-- O iPadOS decide o que fica selecionável pelo accept. Só "audio/*"
+     deixa muito MP3 apagado, então vão também as extensões explícitas.
+     O segundo seletor, sem filtro nenhum, é a saída para os teimosos. -->
+<input type="file" id="filePicker" class="hidden"
+       accept="audio/*,audio/mpeg,audio/mp4,audio/x-m4a,audio/wav,audio/aac,audio/flac,audio/ogg,.mp3,.m4a,.m4b,.wav,.aac,.flac,.ogg,.oga,.aif,.aiff,.caf,.mp4">
+<input type="file" id="filePickerAll" class="hidden">
 <input type="file" id="jsonPicker" accept="application/json,.json" class="hidden">
 
 <script type="module" src="js/app.js"></script>
