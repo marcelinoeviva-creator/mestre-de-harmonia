@@ -269,8 +269,14 @@ async function call(clientId, path, { method = 'GET', body, query } = {}){
     throw new SpotifyError(msg + raw(r.status, msg, reason), String(r.status));
   }
 
-  // Resposta com sucesso mas ilegível: aí sim é alguém no meio do caminho.
-  if(notJson) throw notJsonError(r, text);
+  // Sucesso sem JSON não é necessariamente problema: os comandos de
+  // player respondem 200 com um identificador em texto puro. Só é
+  // rede intrometida quando o corpo é uma página.
+  if(notJson){
+    const ehPagina = /^\s*<|<html|<!doctype/i.test(text);
+    if(ehPagina) throw notJsonError(r, text);
+    return null;
+  }
   return data;
 }
 
