@@ -15,8 +15,11 @@
    - css/js/imagens saem do cache na hora e se atualizam por trás.
    ============================================================ */
 
-const VERSION = '2026-08-17-d';
+const VERSION = '2026-08-17-e';
 const CACHE = 'mh-' + VERSION;
+
+/* Pasta onde o app vive, deduzida da posição deste arquivo. */
+const RAIZ = new URL('./', self.location).pathname;
 
 const SHELL = [
   './',
@@ -69,15 +72,20 @@ self.addEventListener('fetch', e => {
   }
 
   // Navegação: rede primeiro, para nunca congelar numa versão velha.
+  // Só a raiz é o app: outras páginas do site (a apresentação, por
+  // exemplo) guardam-se no endereço delas. Sem esta distinção, visitar
+  // qualquer página gravaria por cima da cópia offline do painel.
   if(req.mode === 'navigate'){
+    const ehApp = url.pathname === RAIZ || url.pathname === RAIZ + 'index.html';
+    const chave = ehApp ? './index.html' : req;
     e.respondWith(
       fetch(req)
         .then(res => {
           const copia = res.clone();
-          caches.open(CACHE).then(c => c.put('./index.html', copia));
+          caches.open(CACHE).then(c => c.put(chave, copia));
           return res;
         })
-        .catch(() => caches.match('./index.html'))
+        .catch(() => caches.match(chave))
     );
     return;
   }

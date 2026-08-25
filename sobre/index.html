@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mestre de Harmonia — painel de música para sessões maçônicas</title>
+<meta name="description" content="Aplicativo para o Mestre de Harmonia conduzir a música da sessão: roteiro por momento do ritual, links do Spotify e mesa de som de dois canais. Roda em iPad e Android.">
+<meta name="theme-color" content="#0a0f1c">
+<link rel="icon" href="../icons/icon-192.png">
+<style>
+:root{
+  --bg:#080d18; --panel:#131d33; --panel2:#16203a; --line:#26314f; --line-hi:#3a4870;
+  --gold:#d4af37; --gold-hi:#f2dc95; --gold-dim:#8a7228;
+  --text:#eef2fb; --muted:#93a0bd; --spotify:#1db954;
+  --serif:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","Helvetica Neue",sans-serif;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0; background:
+    radial-gradient(1200px 700px at 50% -10%, #16224080, transparent 62%),
+    linear-gradient(180deg,var(--bg),#060a12 60%);
+  color:var(--text); font-family:var(--sans); font-size:17px; line-height:1.65;
+  -webkit-text-size-adjust:100%;
+}
+.wrap{max-width:940px; margin:0 auto; padding:0 22px}
+h1,h2,h3{font-family:var(--serif); font-weight:600; line-height:1.2; margin:0}
+h2{font-size:clamp(24px,4vw,32px); color:var(--gold-hi); margin-bottom:10px}
+h3{font-size:19px; color:var(--gold-hi); margin-bottom:6px}
+p{margin:0 0 16px}
+section{padding:56px 0; border-top:1px solid var(--line)}
+.muted{color:var(--muted)}
+strong{color:var(--gold-hi); font-weight:600}
+
+/* Topo */
+header{padding:64px 0 56px; text-align:center}
+/* O emblema é arte de traço escuro: vai sobre um medalhão claro para
+   ler no fundo escuro, como no próprio aplicativo. */
+.mark{
+  width:104px; height:104px; margin:0 auto 22px; display:block; padding:8px;
+  object-fit:contain; border-radius:50%;
+  background:radial-gradient(circle at 50% 42%, #fffdf6, #efe6d0);
+  border:2px solid var(--gold-dim);
+  box-shadow:0 0 0 1px #00000055, 0 6px 24px #0009;
+}
+.origem{
+  margin:12px 0 0; font-size:13px; letter-spacing:.08em; text-transform:uppercase;
+  color:var(--gold); font-weight:600;
+}
+.selo{display:flex; align-items:center; gap:18px; margin:0 0 22px}
+.selo img{
+  width:74px; height:74px; flex:0 0 auto; padding:6px; object-fit:contain; border-radius:50%;
+  background:radial-gradient(circle at 50% 42%, #fffdf6, #efe6d0); border:1.5px solid var(--gold-dim);
+}
+.selo div{font-size:15px; color:#c3cde5}
+.selo strong{display:block; font-family:var(--serif); font-size:18px; color:var(--gold-hi)}
+header h1{font-size:clamp(32px,6vw,50px); color:var(--gold-hi); letter-spacing:.01em}
+.tagline{font-size:clamp(17px,2.4vw,21px); color:var(--muted); max-width:620px; margin:14px auto 0}
+.plataformas{margin-top:26px; font-size:14.5px; color:var(--muted); letter-spacing:.04em}
+.plataformas span{display:inline-block; padding:5px 13px; margin:4px; border:1px solid var(--line-hi);
+  border-radius:999px; background:#0d1526}
+
+.cta{display:flex; gap:12px; justify-content:center; flex-wrap:wrap; margin-top:30px}
+.btn{display:inline-block; padding:14px 26px; border-radius:10px; text-decoration:none;
+  font-weight:600; font-size:16px}
+.btn-1{background:linear-gradient(180deg,#d9b845,#a8842a); color:#1a1305; border:1px solid #e8cf7a}
+.btn-2{background:var(--panel); color:var(--text); border:1px solid var(--line-hi)}
+
+/* Cartões */
+.grid{display:grid; gap:16px; grid-template-columns:repeat(auto-fit,minmax(250px,1fr))}
+.card{background:linear-gradient(180deg,var(--panel2),#111a2e); border:1px solid var(--line);
+  border-radius:14px; padding:22px}
+.card p{margin:0; font-size:15.5px; color:#c3cde5}
+
+/* Réplica da mesa */
+.console{background:linear-gradient(180deg,#0f1830,#0a0f1c); border:1px solid var(--line-hi);
+  border-radius:14px; padding:16px; display:grid; gap:12px;
+  grid-template-columns:1fr 130px 1fr; margin-top:8px}
+.ch{background:linear-gradient(180deg,#16203a,#111a2e); border:1px solid var(--line);
+  border-radius:12px; padding:10px; display:flex; flex-direction:column; gap:8px}
+.ch.sp{background:linear-gradient(180deg,#0f2a1c,#0c1a16); border-color:#1db95433}
+.ch-top{display:flex; align-items:center; gap:9px}
+.tag{width:26px; height:26px; border-radius:7px; display:grid; place-items:center; flex:0 0 auto;
+  font-family:var(--serif); font-size:14px; background:#0a1120; border:1px solid var(--gold-dim); color:var(--gold)}
+.ch.sp .tag{border-color:#1db95477; color:#5ee08c}
+.ch-name{font-size:12.5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.ch-time{font-size:11px; color:var(--muted)}
+.ch-mid{display:flex; gap:10px}
+.fader{width:44px; height:74px; border-radius:10px; background:linear-gradient(180deg,#060a13,#0d1526);
+  border:1px solid var(--line); position:relative; overflow:hidden; flex:0 0 auto}
+.fader i{position:absolute; left:0; right:0; bottom:0; height:70%;
+  background:linear-gradient(180deg,#d4af3755,#d4af3718); border-top:1px solid #d4af3766}
+.ch.sp .fader i{background:linear-gradient(180deg,#1db95455,#1db95418); border-top-color:#1db95488}
+.fader b{position:absolute; left:3px; right:3px; height:16px; bottom:calc(70% - 8px); border-radius:5px;
+  background:linear-gradient(180deg,#f2dc95,#a8842a); border:1px solid #f7e9b8}
+.ch.sp .fader b{background:linear-gradient(180deg,#7ff0ab,#158f42); border-color:#b6f8ce}
+.keys{flex:1; display:flex; flex-direction:column; gap:5px}
+.key{height:30px; border-radius:8px; background:#0d1526; border:1px solid var(--line);
+  display:grid; place-items:center; font-size:13px; color:var(--gold-hi)}
+.key.big{flex:1; font-size:19px}
+.keys .row{display:flex; gap:5px}
+.keys .row .key{flex:1}
+.bar{height:7px; border-radius:4px; border:1px solid var(--line);
+  background:linear-gradient(90deg,var(--gold) 38%, #0a1120 38%)}
+.ch.sp .bar{background:linear-gradient(90deg,var(--spotify) 52%, #071410 52%); border-color:#1db95444}
+.mid{background:linear-gradient(180deg,#141d33,#0d1424); border:1px solid var(--line-hi);
+  border-radius:12px; padding:10px; display:flex; flex-direction:column; gap:8px; align-items:center}
+.swap{width:100%; height:40px; border-radius:9px; background:linear-gradient(180deg,#2a3a63,#1b2745);
+  border:1px solid var(--line-hi); color:var(--gold-hi); display:grid; place-items:center;
+  font-size:14px; font-weight:600}
+.panic{width:100%; height:30px; border-radius:8px; background:#3a1717; border:1px solid #7a2c2c;
+  color:#ffb0ae; display:grid; place-items:center; font-size:11px; letter-spacing:.1em; font-weight:700}
+.legenda{font-size:13.5px; color:var(--muted); margin-top:12px; text-align:center}
+
+/* Passos */
+ol.passos{counter-reset:p; list-style:none; padding:0; margin:0}
+ol.passos li{counter-increment:p; position:relative; padding-left:46px; margin-bottom:16px}
+ol.passos li::before{content:counter(p); position:absolute; left:0; top:-1px; width:31px; height:31px;
+  border-radius:50%; background:#0d1526; border:1px solid var(--gold-dim); color:var(--gold-hi);
+  display:grid; place-items:center; font-size:14px; font-weight:600}
+.duas{display:grid; gap:26px; grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}
+
+.nota{background:#1b2033; border-left:3px solid var(--gold); border-radius:8px;
+  padding:14px 16px; font-size:15px; color:#ccd6ea; margin:20px 0}
+.faq{border-top:1px solid var(--line); padding:18px 0}
+.faq:last-child{border-bottom:1px solid var(--line)}
+.faq h3{margin-bottom:4px}
+.faq p{margin:0; font-size:15.5px; color:#c3cde5}
+.preencher{color:var(--gold-hi); border-bottom:1px dashed var(--gold-dim)}
+
+footer{padding:44px 0 60px; text-align:center; color:var(--muted); font-size:14px;
+  border-top:1px solid var(--line)}
+footer a{color:var(--gold-hi)}
+@media (max-width:640px){
+  section{padding:44px 0}
+  .console{grid-template-columns:1fr; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <img class="mark" src="../icons/logo.png" alt="Emblema da A∴R∴L∴S∴ Colunas de Pedras Grandes">
+    <h1>Mestre de Harmonia</h1>
+    <p class="origem">A∴R∴L∴S∴ Colunas de Pedras Grandes · Loja mãe do aplicativo</p>
+    <p class="tagline">O painel de música da sessão. O roteiro do ritual na ordem certa,
+      cada peça a um toque, e uma mesa de som para a trilha entrar por baixo antes da anterior acabar.</p>
+
+    <div class="plataformas">
+      <span>iPad</span><span>Tablet Android</span><span>Celular Android</span><span>Funciona sem internet</span>
+    </div>
+
+    <div class="cta">
+      <a class="btn btn-1" href="../">Abrir o aplicativo</a>
+      <a class="btn btn-2" href="#instalar">Como instalar</a>
+    </div>
+  </div>
+</header>
+
+<section>
+  <div class="wrap">
+    <h2>O que ele resolve</h2>
+    <p class="muted">Conduzir a música de uma sessão com o celular na mão é procurar faixa no meio do
+      ritual, errar o momento e cortar o som na hora errada. O app resolve isso separando o repertório
+      pelos passos do seu ritual.</p>
+
+    <div class="grid">
+      <div class="card">
+        <h3>Roteiro por momento</h3>
+        <p>Abertura, Cerimônia das Luzes, Cadeia de União, Encerramento… Você cria os momentos com os
+          nomes do <em>seu</em> ritual e põe as peças em cada um, na ordem.</p>
+      </div>
+      <div class="card">
+        <h3>Anotação de execução</h3>
+        <p>Cada peça guarda a sua deixa: “entrar no 3º golpe do malhete”, “cortar quando o Venerável
+          sentar”. Fica escrito na linha da música.</p>
+      </div>
+      <div class="card">
+        <h3>Mesa de dois canais</h3>
+        <p>Decks A e B com volume independente, fades e transição automática. É como a próxima trilha
+          entra por baixo antes de a primeira terminar.</p>
+      </div>
+      <div class="card">
+        <h3>Botão SILÊNCIO</h3>
+        <p>Corta tudo na hora, decks e Spotify. Para quando alguém pede a palavra e a música precisa
+          sumir naquele segundo.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2>A mesa de som</h2>
+    <p class="muted">Sempre visível no rodapé, sem menu nem submenu. Os três canais ficam à mão durante
+      toda a sessão.</p>
+
+    <div class="console" aria-hidden="true">
+      <div class="ch">
+        <div class="ch-top"><span class="tag">A</span>
+          <span><span class="ch-name">Hino de Abertura</span><br><span class="ch-time">1:12 / 3:48</span></span>
+        </div>
+        <div class="ch-mid">
+          <div class="fader"><i></i><b></b></div>
+          <div class="keys"><div class="key big">▶</div>
+            <div class="row"><div class="key">■</div><div class="key">↗</div><div class="key">↘</div></div>
+          </div>
+        </div>
+        <div class="bar"></div>
+      </div>
+
+      <div class="mid">
+        <div class="fader" style="height:60px"><i style="height:90%"></i><b style="bottom:calc(90% - 8px)"></b></div>
+        <div style="font-size:10px;letter-spacing:.14em;color:var(--gold)">MESTRE</div>
+        <div class="swap">A ⇄ B</div>
+        <div class="panic">SILÊNCIO</div>
+      </div>
+
+      <div class="ch sp">
+        <div class="ch-top"><span class="tag">S</span>
+          <span><span class="ch-name">Spiegel im Spiegel</span><br><span class="ch-time">4:31 / 8:39</span></span>
+        </div>
+        <div class="ch-mid">
+          <div class="fader"><i></i><b></b></div>
+          <div class="keys"><div class="key big">❚❚</div>
+            <div class="row"><div class="key">⏮</div><div class="key">⏭</div><div class="key">Saída</div></div>
+          </div>
+        </div>
+        <div class="bar"></div>
+      </div>
+    </div>
+    <p class="legenda">Canais A e B para arquivos de áudio · canal S para o Spotify · fader mestre e
+      transição cruzada no centro</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2>As duas fontes de som</h2>
+    <p class="muted">Isto é o ponto mais importante de entender antes de usar, e não escondemos:</p>
+
+    <div class="duas">
+      <div>
+        <h3>Spotify — o seu repertório</h3>
+        <p>Você cola o link da faixa e o nome é preenchido sozinho. Um toque toca.</p>
+        <p><strong>O Spotify comanda um player só.</strong> Não existe forma — em aplicativo nenhum,
+          de ninguém — de tocar duas músicas dele ao mesmo tempo. A API não permite e os termos proíbem.</p>
+      </div>
+      <div>
+        <h3>Arquivos — a sobreposição real</h3>
+        <p>Peças com arquivo (MP3, M4A, WAV) vão para os decks A e B e <strong>tocam juntas, com volume
+          independente</strong>. É a única forma de cruzar duas trilhas.</p>
+        <p>Não precisa converter o repertório inteiro: bastam as poucas peças que você realmente
+          sobrepõe. O resto segue no Spotify.</p>
+      </div>
+    </div>
+
+    <div class="nota">Usando apenas Spotify, a única sobreposição possível é o crossfade dele:
+      <em>Spotify → Ajustes → Reprodução → Crossfade</em>, até 12 segundos.</div>
+  </div>
+</section>
+
+<section id="instalar">
+  <div class="wrap">
+    <h2>Como instalar</h2>
+    <p class="muted">Não passa por App Store nem Play Store. Abre no navegador e vira ícone na tela
+      inicial, em tela cheia. Leva menos de um minuto.</p>
+
+    <div class="duas">
+      <div>
+        <h3>iPad e iPhone</h3>
+        <ol class="passos">
+          <li>Abra o endereço do app <strong>no Safari</strong>.</li>
+          <li>Toque em <strong>Compartilhar</strong>, o quadrado com a seta para cima.</li>
+          <li>Escolha <strong>Adicionar à Tela de Início</strong>.</li>
+          <li>Abra pelo ícone.</li>
+        </ol>
+      </div>
+      <div>
+        <h3>Android</h3>
+        <ol class="passos">
+          <li>Abra o endereço do app <strong>no Chrome</strong>.</li>
+          <li>Toque nos <strong>três pontinhos</strong> no canto superior direito.</li>
+          <li>Escolha <strong>Instalar aplicativo</strong>.</li>
+          <li>Abra pelo ícone.</li>
+        </ol>
+      </div>
+    </div>
+
+    <div class="nota">A partir daí ele <strong>funciona sem internet</strong>. Se o wi-fi da Loja cair
+      no meio da sessão, o painel e os arquivos de áudio continuam. Só o Spotify precisa de conexão,
+      por natureza.</div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2>Configuração</h2>
+
+    <h3 style="margin-top:8px">Montar o repertório</h3>
+    <p>No Spotify, na música: <strong>⋯ → Compartilhar → Copiar link</strong>. No app:
+      <strong>+ Peça</strong>, colar, salvar. Dá para colar vários links de uma vez — vira uma peça
+      para cada.</p>
+
+    <h3 style="margin-top:24px">Conectar o Spotify <span class="muted" style="font-weight:400">(opcional)</span></h3>
+    <p>Sem configurar nada o app já funciona: tocar abre o Spotify. Conectar permite comandar a
+      reprodução sem sair do painel, ver a posição da música e controlar o volume pelo canal S.
+      Exige conta <strong>Premium</strong> e um cadastro gratuito de desenvolvedor no Spotify —
+      o passo a passo está dentro do app, em Ajustes.</p>
+
+    <h3 style="margin-top:24px">Cópia de segurança</h3>
+    <p><strong>Ajustes → Exportar roteiro</strong> gera um arquivo com momentos, peças, links e
+      anotações. Guarde no iCloud ou no Google Drive. Trocou de aparelho, é só importar.</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2>Perguntas frequentes</h2>
+
+    <div class="faq">
+      <h3>Preciso de conta paga no Spotify?</h3>
+      <p>Não para usar o app. O modo padrão só guarda os links e abre o Spotify ao tocar, e isso
+        funciona com conta gratuita. O controle de dentro do painel é que exige Premium — limitação
+        do Spotify, não do aplicativo.</p>
+    </div>
+
+    <div class="faq">
+      <h3>Funciona sem internet?</h3>
+      <p>O painel, o roteiro e os arquivos de áudio, sim. As faixas do Spotify não, porque quem toca
+        é o Spotify.</p>
+    </div>
+
+    <div class="faq">
+      <h3>Consigo mesmo sobrepor duas músicas?</h3>
+      <p>Sim, entre os decks A e B, com arquivos de áudio. Com faixas do Spotify não é possível em
+        aplicativo nenhum.</p>
+    </div>
+
+    <div class="faq">
+      <h3>Dá para usar as músicas baixadas no Spotify como arquivo?</h3>
+      <p>Não. Os downloads do Spotify são criptografados e ficam trancados dentro do aplicativo dele.
+        Para os decks é preciso ter o arquivo de áudio por outra via.</p>
+    </div>
+
+    <div class="faq">
+      <h3>Cada Loja precisa configurar do zero?</h3>
+      <p>O aplicativo, não — instala e já vem com uma estrutura de momentos para adaptar. O repertório
+        é de cada Loja, montado colando os links do próprio acervo.</p>
+    </div>
+
+    <div class="faq">
+      <h3>O som continua se eu sair do aplicativo?</h3>
+      <p>As faixas do Spotify sim. Os decks A e B não: aplicativo web no celular ou tablet só toca em
+        primeiro plano. Deixe o painel aberto durante a sessão — ele mantém a tela acesa sozinho
+        enquanto houver som.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2>A iniciativa</h2>
+
+    <div class="selo">
+      <img src="../icons/logo.png" alt="Emblema da A∴R∴L∴S∴ Colunas de Pedras Grandes">
+      <div><strong>A∴R∴L∴S∴ Colunas de Pedras Grandes</strong>
+        Loja mãe do aplicativo, onde ele foi concebido, construído e é usado em sessão.</div>
+    </div>
+
+    <p><span class="preencher">[ Escrever aqui: quem desenvolveu, qual Loja, e para qual obra de
+      caridade vai o recurso arrecadado. ]</span></p>
+    <p><span class="preencher">[ Escrever aqui: valor sugerido da licença por Loja e forma de
+      contribuição. ]</span></p>
+    <p><span class="preencher">[ Escrever aqui: contato — nome, e-mail ou WhatsApp. ]</span></p>
+
+    <div class="cta" style="justify-content:flex-start">
+      <a class="btn btn-1" href="../">Abrir o aplicativo</a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <p>Mestre de Harmonia · painel de música para sessões maçônicas<br>
+      <a href="../">Abrir o aplicativo</a></p>
+  </div>
+</footer>
+
+</body>
+</html>
