@@ -112,6 +112,12 @@ header h1{font-size:clamp(32px,6vw,50px); color:var(--gold-hi); letter-spacing:.
 .panic{width:100%; height:30px; border-radius:8px; background:#3a1717; border:1px solid #7a2c2c;
   color:#ffb0ae; display:grid; place-items:center; font-size:11px; letter-spacing:.1em; font-weight:700}
 .legenda{font-size:13.5px; color:var(--muted); margin-top:12px; text-align:center}
+.tela{margin:22px 0 0}
+.tela img{width:100%; height:auto; display:block; border-radius:12px;
+  border:1px solid var(--line-hi); box-shadow:0 10px 40px #000a}
+.tela figcaption{font-size:13.5px; color:var(--muted); margin-top:11px; text-align:center}
+.aviso-lancamento{margin:22px auto 0; max-width:520px; font-size:14.5px; color:var(--gold);
+  border:1px solid var(--gold-dim); border-radius:10px; padding:11px 16px; background:#1a150633}
 
 /* Passos */
 ol.passos{counter-reset:p; list-style:none; padding:0; margin:0}
@@ -153,9 +159,11 @@ footer a{color:var(--gold-hi)}
     </div>
 
     <div class="cta">
-      <a class="btn btn-1" href="../">Abrir o aplicativo</a>
-      <a class="btn btn-2" href="#instalar">Como instalar</a>
+      <a class="btn btn-1" href="#contato">Quero para minha Loja</a>
+      <a class="btn btn-2" href="#instalar">Como funciona a instalação</a>
     </div>
+    <p class="aviso-lancamento">Em fase final de testes na Loja mãe.
+      Disponível para as primeiras Lojas em breve.</p>
   </div>
 </header>
 
@@ -197,42 +205,11 @@ footer a{color:var(--gold-hi)}
     <p class="muted">Sempre visível no rodapé, sem menu nem submenu. Os três canais ficam à mão durante
       toda a sessão.</p>
 
-    <div class="console" aria-hidden="true">
-      <div class="ch">
-        <div class="ch-top"><span class="tag">A</span>
-          <span><span class="ch-name">Hino de Abertura</span><br><span class="ch-time">1:12 / 3:48</span></span>
-        </div>
-        <div class="ch-mid">
-          <div class="fader"><i></i><b></b></div>
-          <div class="keys"><div class="key big">▶</div>
-            <div class="row"><div class="key">■</div><div class="key">↗</div><div class="key">↘</div></div>
-          </div>
-        </div>
-        <div class="bar"></div>
-      </div>
-
-      <div class="mid">
-        <div class="fader" style="height:60px"><i style="height:90%"></i><b style="bottom:calc(90% - 8px)"></b></div>
-        <div style="font-size:10px;letter-spacing:.14em;color:var(--gold)">MESTRE</div>
-        <div class="swap">A ⇄ B</div>
-        <div class="panic">SILÊNCIO</div>
-      </div>
-
-      <div class="ch sp">
-        <div class="ch-top"><span class="tag">S</span>
-          <span><span class="ch-name">Spiegel im Spiegel</span><br><span class="ch-time">4:31 / 8:39</span></span>
-        </div>
-        <div class="ch-mid">
-          <div class="fader"><i></i><b></b></div>
-          <div class="keys"><div class="key big">❚❚</div>
-            <div class="row"><div class="key">⏮</div><div class="key">⏭</div><div class="key">Saída</div></div>
-          </div>
-        </div>
-        <div class="bar"></div>
-      </div>
-    </div>
-    <p class="legenda">Canais A e B para arquivos de áudio · canal S para o Spotify · fader mestre e
-      transição cruzada no centro</p>
+    <figure class="tela">
+      <img src="telas/painel.png" alt="Tela do aplicativo: momentos do ritual à esquerda, peças ao centro e a mesa de som no rodapé" loading="lazy">
+      <figcaption>Os momentos do ritual à esquerda, as peças daquele momento ao centro e a mesa de
+        som sempre visível no rodapé. Canais A e B para arquivos, canal S para o Spotify.</figcaption>
+    </figure>
   </div>
 </section>
 
@@ -303,6 +280,11 @@ footer a{color:var(--gold-hi)}
     <p>No Spotify, na música: <strong>⋯ → Compartilhar → Copiar link</strong>. No app:
       <strong>+ Peça</strong>, colar, salvar. Dá para colar vários links de uma vez — vira uma peça
       para cada.</p>
+
+    <figure class="tela">
+      <img src="telas/peca.png" alt="Tela de cadastro de uma peça, com campo para o link do Spotify, nome, compositor e anotação de execução" loading="lazy">
+      <figcaption>Cola-se o link e o nome vem preenchido. A anotação de execução é a sua deixa.</figcaption>
+    </figure>
 
     <h3 style="margin-top:24px">Conectar o Spotify <span class="muted" style="font-weight:400">(opcional)</span></h3>
     <p>Sem configurar nada o app já funciona: tocar abre o Spotify. Conectar permite comandar a
@@ -391,20 +373,17 @@ footer a{color:var(--gold-hi)}
     <h3 style="margin-top:26px">A obra beneficiada</h3>
     <p><span class="preencher">[ Qual obra, o que ela faz e como o recurso é aplicado. ]</span></p>
 
-    <h3 style="margin-top:22px">Falar conosco</h3>
+    <h3 id="contato" style="margin-top:22px">Falar conosco</h3>
     <p>Para instalar na sua Loja, tirar dúvidas ou pedir ajuda a montar o repertório:<br>
       <span class="preencher">[ nome, e-mail ou WhatsApp ]</span></p>
 
-    <div class="cta" style="justify-content:flex-start">
-      <a class="btn btn-1" href="../">Abrir o aplicativo</a>
-    </div>
+
   </div>
 </section>
 
 <footer>
   <div class="wrap">
-    <p>Mestre de Harmonia · painel de música para sessões maçônicas<br>
-      <a href="../">Abrir o aplicativo</a></p>
+    <p>Mestre de Harmonia · painel de música para sessões maçônicas</p>
   </div>
 </footer>
 
