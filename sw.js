@@ -15,7 +15,7 @@
    - css/js/imagens saem do cache na hora e se atualizam por trás.
    ============================================================ */
 
-const VERSION = '2026-08-17-c';
+const VERSION = '2026-08-17-d';
 const CACHE = 'mh-' + VERSION;
 
 const SHELL = [
