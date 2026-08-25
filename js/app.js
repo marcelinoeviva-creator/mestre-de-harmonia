@@ -1009,16 +1009,47 @@ function doExport(){
   toast('Roteiro exportado.');
 }
 
+/* Importar de arquivo é o caminho normal de receber um roteiro
+   preparado fora. Por isso pergunta antes: substituir apaga o que o
+   operador já montou à mão, e isso não pode ser o comportamento
+   silencioso de um botão. */
 function doImport(){
   const p = $('#jsonPicker');
   p.value = '';
   p.onchange = async () => {
     const f = p.files[0]; if(!f) return;
+    let texto;
+    try{ texto = await f.text(); }
+    catch(e){ return toast('Não deu para ler o arquivo.', true); }
+
+    let prévia;
     try{
-      S.importJSON(await f.text());
-      closeModal(); renderAll();
-      toast('Roteiro importado.');
-    }catch(e){ toast('Arquivo inválido: ' + e.message, true); }
+      const j = JSON.parse(texto);
+      if(!j.moments || !j.tracks) throw new Error('formato inesperado');
+      prévia = `${j.moments.length} momento(s) e ${Object.keys(j.tracks).length} peça(s)`;
+    }catch(e){ return toast('Arquivo inválido: ' + e.message, true); }
+
+    const aplicar = merge => {
+      try{
+        const n = S.importJSON(texto, { merge });
+        closeModal(); renderAll();
+        toast(merge ? `${n} peça(s) somada(s) ao roteiro.` : 'Roteiro substituído.');
+      }catch(e){ toast('Falhou: ' + e.message, true); }
+    };
+
+    modal({
+      title:'Importar roteiro',
+      body: el('div', {},
+        el('p', {}, `O arquivo "${f.name}" traz ${prévia}.`),
+        el('div', { class:'notice' },
+          'Somar mantém o que você já montou e só acrescenta o que falta, casando os momentos ' +
+          'pelo nome. Substituir apaga o roteiro atual e coloca este no lugar.')),
+      buttons:[
+        { label:'Cancelar', onClick: c => c() },
+        { label:'Substituir tudo', kind:'danger', onClick: () => aplicar(false) },
+        { label:'Somar ao meu', kind:'primary', onClick: () => aplicar(true) }
+      ]
+    });
   };
   p.click();
 }
