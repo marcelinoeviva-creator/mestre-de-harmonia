@@ -155,6 +155,21 @@ function wireConsole(){
   $('#spNext').onclick   = () => spCommand('next');
   $('#spPrev').onclick   = () => spCommand('prev');
   $('#spDevices').onclick = openDevices;
+
+  const spScrub = $('#spScrub');
+  spScrub.addEventListener('pointerdown', () => { spScrub.dataset.holding = '1'; });
+  const soltar = () => { delete spScrub.dataset.holding; };
+  spScrub.addEventListener('pointerup', soltar);
+  spScrub.addEventListener('pointercancel', soltar);
+  spScrub.addEventListener('change', async () => {
+    if(!spCanControl() || !spPos.dur) return;
+    const destino = spPos.dur * (spScrub.value / 1000);
+    try{
+      await SP.seek(st.settings.clientId, destino);
+      spPos = { ...spPos, ms: destino, at: Date.now() };
+      setTimeout(pollSpotify, 400);
+    }catch(e){ toast(e.message, true); }
+  });
 }
 
 async function spCommand(kind){
@@ -560,6 +575,11 @@ let spProfile = null;    // { display_name, product } quando a API responde de f
 let spFault = '';        // motivo, quando o token existe mas a API recusa
 let spChecking = false;  // teste em andamento
 
+/* A API só é consultada a cada 5s. Guardar a posição e o instante em
+   que ela chegou deixa a barra correr suave nesse meio-tempo, em vez
+   de pular de cinco em cinco segundos. */
+let spPos = { ms: 0, dur: 0, at: 0, playing: false };
+
 async function initSpotify(){
   SP.restore();
   const cid = st.settings.clientId;
@@ -610,6 +630,12 @@ async function pollSpotify(){
   if(!spCanControl()) return;
   try{
     spState = await SP.playbackState(st.settings.clientId);
+    spPos = {
+      ms: spState?.progress_ms || 0,
+      dur: spState?.item?.duration_ms || 0,
+      at: Date.now(),
+      playing: !!spState?.is_playing
+    };
     if(spState?.device){
       spDeviceId = spState.device.id;
       const v = spState.device.volume_percent;
@@ -642,22 +668,21 @@ function paintSpotify(){
 
   if(logged && spFault){
     $('#spTitle').textContent = 'Spotify recusou o acesso';
-    $('#spDevice').textContent = 'toque aqui em cima para ver o motivo';
-    $('#spHint').textContent = 'Tocar abre o app do Spotify.';
+    $('#spDevice').textContent = 'toque na luz acima para ver o motivo';
+    spPos = { ms:0, dur:0, at:0, playing:false };
     return;
   }
 
   if(!working){
     $('#spTitle').textContent = logged ? 'Verificando o Spotify…' : 'Spotify em modo link';
-    $('#spDevice').textContent = '—';
-    $('#spHint').textContent = 'Tocar abre o app do Spotify.';
+    $('#spDevice').textContent = 'tocar abre o app do Spotify';
+    spPos = { ms:0, dur:0, at:0, playing:false };
     $('#spToggle').classList.remove('on');
     return;
   }
   const it = spState?.item;
   $('#spTitle').textContent = it ? `${it.name} — ${(it.artists||[]).map(a=>a.name).join(', ')}` : 'Nada tocando';
   $('#spDevice').textContent = spState?.device ? spState.device.name : 'sem aparelho ativo';
-  $('#spHint').textContent = spState?.is_playing ? 'Tocando pelo Spotify Connect.' : 'Pronto.';
   $('#spToggle').textContent = spState?.is_playing ? '❚❚' : '▶';
   $('#spToggle').classList.toggle('on', !!spState?.is_playing);
 }
@@ -925,13 +950,31 @@ function tick(){
     $('[data-role="time"]', node).textContent = `${mmss(cur)} / ${mmss(dur)}`;
     const scrub = $(`input[data-role="scrub"][data-deck="${id}"]`);
     if(!scrub.dataset.holding) scrub.value = Math.round(ratio * 1000);
+    scrub.style.setProperty('--p', (ratio * 100).toFixed(1) + '%');
+    scrub.disabled = !A.isLoaded(id);
     if(A.isPlaying(id)) anyPlaying = true;
   }
+  pintarBarraSpotify();
   if(anyPlaying !== tick.last){
     tick.last = anyPlaying;
     A.keepAwake(anyPlaying);
     paintDeck('A'); paintDeck('B'); paintTracks();
   }
+}
+
+/* Posição estimada do Spotify: o que a API disse, mais o tempo que
+   passou desde então enquanto estiver tocando. */
+function pintarBarraSpotify(){
+  const scrub = $('#spScrub');
+  const dur = spPos.dur;
+  const decorrido = spPos.playing ? Date.now() - spPos.at : 0;
+  const ms = dur ? Math.min(dur, spPos.ms + decorrido) : 0;
+  const ratio = dur ? ms / dur : 0;
+
+  $('#spTime').textContent = `${mmss(ms / 1000)} / ${mmss(dur / 1000)}`;
+  if(!scrub.dataset.holding) scrub.value = Math.round(ratio * 1000);
+  scrub.style.setProperty('--p', (ratio * 100).toFixed(1) + '%');
+  scrub.disabled = !spCanControl() || !dur;
 }
 
 function renderAll(){
