@@ -901,6 +901,19 @@ function openSettings(){
     el('div', { class:'field row', style:'margin-top:12px' },
       el('button', { class:'ghost-btn', onclick: openDiagnostico }, 'Diagnóstico da conexão'),
       el('button', { class:'ghost-btn', onclick: buscarAtualizacao }, 'Buscar atualização')),
+    el('div', { class:'field' },
+      el('button', { class:'ghost-btn', style:'width:100%', onclick: async e => {
+          const antes = e.target.textContent;
+          e.target.textContent = 'tocando um bipe…';
+          const estado = await A.testeDeSom();
+          setTimeout(() => { e.target.textContent = antes; }, 1500);
+          toast(estado === 'running'
+            ? 'Se você não ouviu o bipe, o volume do iPad está baixo ou mudo.'
+            : `O motor de áudio está "${estado}". Toque na tela e tente de novo.`,
+            estado !== 'running');
+      }}, 'Testar som dos decks'),
+      el('p', { class:'hint' },
+        'Toca um bipe de 1 segundo pelo mesmo caminho dos decks A e B. Serve para separar problema de arquivo de problema de som.')),
     el('div', { class:'field', style:'margin-top:16px' },
       el('label', {}, 'Ao tocar uma peça sem conexão'), openApp),
 
@@ -1036,6 +1049,10 @@ function tick(){
     if(A.isPlaying(id)) anyPlaying = true;
   }
   pintarBarraSpotify();
+  if(anyPlaying && A.estado() !== 'running' && !tick.avisou){
+    tick.avisou = true;
+    toast('O som está bloqueado pelo iPad. Toque na tela e aperte ▶ de novo.', true);
+  }
   if(anyPlaying !== tick.last){
     tick.last = anyPlaying;
     A.keepAwake(anyPlaying);
