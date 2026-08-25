@@ -214,6 +214,22 @@ export async function putFile(blob){
 export function getFile(key){ return tx('readonly',  st => st.get(key)); }
 export function deleteFile(key){ return tx('readwrite', st => st.delete(key)); }
 
+/* Pede ao iPadOS para não descartar os dados do app. Sem isso, o
+   sistema pode limpar tudo para liberar espaço — levando junto o
+   roteiro, os arquivos de áudio e a sessão do Spotify. */
+export async function persistir(){
+  if(!navigator.storage?.persist) return null;
+  try{
+    if(await navigator.storage.persisted?.()) return true;
+    return await navigator.storage.persist();
+  }catch(e){ return null; }
+}
+
+export async function ehPersistente(){
+  try{ return await navigator.storage?.persisted?.() ?? null; }
+  catch(e){ return null; }
+}
+
 export async function storageInfo(){
   if(!navigator.storage?.estimate) return null;
   const { usage = 0, quota = 0 } = await navigator.storage.estimate();

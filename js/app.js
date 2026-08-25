@@ -24,7 +24,8 @@ async function boot(){
   wireLists();
   renderAll();
 
-  document.addEventListener('pointerdown', () => A.unlock(), { once: true });
+  document.addEventListener('pointerdown', () => { A.unlock(); S.persistir(); }, { once: true });
+  S.persistir();
 
   A.onEnded(id => { paintDeck(id); paintTracks(); });
   setInterval(tick, 250);
@@ -97,7 +98,24 @@ function wireHeader(){
     searching = ''; $('#searchInput').value = ''; paintTracks();
   };
   $('#searchInput').oninput = e => { searching = e.target.value; paintTracks(); };
-  $('#spotifyStatus').onclick = openSettings;
+  $('#spotifyStatus').onclick = () => {
+    // Desconectado com Client ID guardado: reconectar é o que se quer,
+    // e caçar o botão no fim de Ajustes é atrito à toa.
+    if(!SP.connected() && st.settings.clientId){
+      return modal({
+        title:'Spotify desconectado',
+        body:'A sessão anterior se perdeu. Reconectar leva você à tela de autorização do Spotify e volta para cá.',
+        buttons:[
+          { label:'Ajustes', onClick: c => { c(); openSettings(); } },
+          { label:'Reconectar', kind:'primary', onClick: async () => {
+              try{ await SP.login(st.settings.clientId); }
+              catch(e){ toast(e.message, true); }
+          }}
+        ]
+      });
+    }
+    openSettings();
+  };
 }
 
 /* ═══════════ Mesa de som ═══════════ */
@@ -856,10 +874,16 @@ function openSettings(){
     }}]
   });
 
-  S.storageInfo().then(i => {
-    if(!i) return;
+  Promise.all([S.storageInfo(), S.ehPersistente()]).then(([i, persistente]) => {
     const line = $('#storageLine');
-    if(line) line.textContent = `Espaço usado pelo app no iPad: ${(i.usage/1048576).toFixed(1)} MB de ${(i.quota/1073741824).toFixed(1)} GB disponíveis.`;
+    if(!line) return;
+    const espaco = i ? `Espaço usado pelo app no iPad: ${(i.usage/1048576).toFixed(1)} MB de ${(i.quota/1073741824).toFixed(1)} GB disponíveis. ` : '';
+    const protecao = persistente === true
+      ? 'Os dados estão protegidos: o iPad não vai apagá-los para liberar espaço.'
+      : persistente === false
+        ? 'Atenção: o iPad ainda pode apagar os dados do app para liberar espaço. Exporte o roteiro de vez em quando.'
+        : '';
+    line.textContent = espaco + protecao;
   });
 }
 
