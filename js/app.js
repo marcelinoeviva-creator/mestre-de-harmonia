@@ -34,9 +34,41 @@ async function boot(){
   registerSW();
 }
 
+/* Registra e mantém o app atualizado sozinho. Antes era preciso abrir
+   duas vezes, e mesmo assim o HTML nunca trocava — correções publicadas
+   não chegavam ao iPad. */
+let recarregando = false;
 function registerSW(){
   if(!('serviceWorker' in navigator)) return;
-  navigator.serviceWorker.register('sw.js').catch(e => console.warn('SW não registrado', e));
+
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if(recarregando) return;          // uma recarga só, nunca em laço
+    recarregando = true;
+    location.reload();
+  });
+
+  navigator.serviceWorker.register('sw.js').then(reg => {
+    reg.update().catch(() => {});
+    // procura versão nova sempre que o app volta ao primeiro plano
+    document.addEventListener('visibilitychange', () => {
+      if(!document.hidden) reg.update().catch(() => {});
+    });
+  }).catch(e => console.warn('SW não registrado', e));
+}
+
+/** Força a busca de uma versão nova, para quando não se quer esperar. */
+async function buscarAtualizacao(){
+  if(!('serviceWorker' in navigator)) return toast('Este navegador não guarda o app.', true);
+  toast('Procurando atualização…');
+  try{
+    const reg = await navigator.serviceWorker.getRegistration();
+    if(!reg) { location.reload(); return; }
+    await reg.update();
+    if(reg.waiting){ reg.waiting.postMessage('atualizar-agora'); return; }
+    setTimeout(() => {
+      if(!recarregando) toast('O app já está na versão mais recente.');
+    }, 2500);
+  }catch(e){ toast('Não deu para verificar: ' + e.message, true); }
 }
 
 /* ═══════════ Faders ═══════════ */
@@ -842,8 +874,9 @@ function openSettings(){
     connectRow,
     el('p', { class:'hint', html:
       'Ao criar o app em developer.spotify.com, use exatamente este Redirect URI:<br><code>' + esc(SP.redirectUri()) + '</code>' }),
-    el('div', { class:'field', style:'margin-top:12px' },
-      el('button', { class:'ghost-btn', onclick: openDiagnostico }, 'Diagnóstico da conexão')),
+    el('div', { class:'field row', style:'margin-top:12px' },
+      el('button', { class:'ghost-btn', onclick: openDiagnostico }, 'Diagnóstico da conexão'),
+      el('button', { class:'ghost-btn', onclick: buscarAtualizacao }, 'Buscar atualização')),
     el('div', { class:'field', style:'margin-top:16px' },
       el('label', {}, 'Ao tocar uma peça sem conexão'), openApp),
 

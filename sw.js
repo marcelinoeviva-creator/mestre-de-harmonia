@@ -1,13 +1,22 @@
 /* ============================================================
    sw.js — service worker
 
-   Guarda o app inteiro no iPad para que ele abra e funcione sem
-   internet. O que depende da rede (API do Spotify, capas) nunca
-   é armazenado: passa direto e falha em silêncio se não houver
-   conexão.
+   Guarda o app no iPad para que ele abra e funcione sem internet.
+
+   Histórico que explica o desenho: a primeira versão servia o
+   index.html do cache e nunca o atualizava. O HTML ficava congelado
+   para sempre, e correções publicadas não chegavam ao aparelho.
+
+   Agora:
+   - a versão abaixo muda a cada publicação, o que força o iPad a
+     reinstalar tudo do zero;
+   - navegação vai à rede primeiro (HTML sempre fresco quando há
+     internet) e cai no cache quando não há;
+   - css/js/imagens saem do cache na hora e se atualizam por trás.
    ============================================================ */
 
-const CACHE = 'mh-v1';
+const VERSION = '2026-08-17-a';
+const CACHE = 'mh-' + VERSION;
 
 const SHELL = [
   './',
@@ -42,6 +51,10 @@ self.addEventListener('activate', e => {
   );
 });
 
+self.addEventListener('message', e => {
+  if(e.data === 'atualizar-agora') self.skipWaiting();
+});
+
 self.addEventListener('fetch', e => {
   const req = e.request;
   if(req.method !== 'GET') return;
@@ -49,10 +62,22 @@ self.addEventListener('fetch', e => {
   const url = new URL(req.url);
   if(url.origin !== location.origin) return;      // Spotify e capas: sempre da rede
 
-  // Navegação: serve o app da memória e atualiza por baixo.
+  // O roteiro publicado nunca sai do cache: é conteúdo, não app.
+  if(url.pathname.endsWith('/roteiro.json')){
+    e.respondWith(fetch(req).catch(() => caches.match(req)));
+    return;
+  }
+
+  // Navegação: rede primeiro, para nunca congelar numa versão velha.
   if(req.mode === 'navigate'){
     e.respondWith(
-      caches.match('./index.html').then(hit => hit || fetch(req))
+      fetch(req)
+        .then(res => {
+          const copia = res.clone();
+          caches.open(CACHE).then(c => c.put('./index.html', copia));
+          return res;
+        })
+        .catch(() => caches.match('./index.html'))
     );
     return;
   }
