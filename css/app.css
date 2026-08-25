@@ -273,8 +273,42 @@ h1,h2,h3{ margin:0; font-family:var(--serif); font-weight:600; letter-spacing:.0
 .deck-btn.play{ flex:1 1 auto; min-height:44px; font-size:27px; color:var(--gold-hi); border-color:var(--gold-dim); }
 .deck-btn.play.on{ background:linear-gradient(180deg,#d9b845,#a8842a); color:#1a1305; border-color:#e8cf7a; }
 
+/* Barra de posição: precisa ser lida de relance, de pé, a um metro
+   da tela. O trecho já tocado vem preenchido, como no Spotify. */
 .scrub{ flex:0 0 auto; }
-.scrub input{ display:block; width:100%; height:20px; margin:0; accent-color:var(--gold); }
+.scrub input{
+  display:block; width:100%; height:26px; margin:0; padding:0;
+  background:transparent; -webkit-appearance:none; appearance:none;
+  --p: 0%;
+}
+.scrub input::-webkit-slider-runnable-track{
+  height:8px; border-radius:4px; border:1px solid var(--line);
+  background:linear-gradient(90deg, var(--gold) var(--p), #0a1120 var(--p));
+}
+.scrub input::-moz-range-track{
+  height:8px; border-radius:4px; border:1px solid var(--line);
+  background:linear-gradient(90deg, var(--gold) var(--p), #0a1120 var(--p));
+}
+.scrub input::-webkit-slider-thumb{
+  -webkit-appearance:none; appearance:none;
+  width:20px; height:20px; margin-top:-7px; border-radius:50%;
+  background:linear-gradient(180deg,#f7e9b8,#c9a227);
+  border:1px solid #fff3cf; box-shadow:0 2px 6px #000a;
+}
+.scrub input::-moz-range-thumb{
+  width:20px; height:20px; border-radius:50%; border:1px solid #fff3cf;
+  background:linear-gradient(180deg,#f7e9b8,#c9a227);
+}
+.scrub input:disabled{ opacity:.4; }
+.scrub input:disabled::-webkit-slider-thumb{ opacity:0; }
+
+.spotify-deck .scrub input::-webkit-slider-runnable-track{
+  background:linear-gradient(90deg, var(--spotify) var(--p), #071410 var(--p));
+  border-color:#1db95444;
+}
+.spotify-deck .scrub input::-webkit-slider-thumb{
+  background:linear-gradient(180deg,#b6f8ce,#158f42); border-color:#d9fce8;
+}
 
 /* Fader vertical (componente próprio — o range nativo não é confiável na vertical no iPadOS) */
 .fader{ flex:0 0 auto; width:56px; display:flex; flex-direction:column; align-items:center; gap:3px; min-height:0; }

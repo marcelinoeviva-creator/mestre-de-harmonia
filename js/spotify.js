@@ -298,6 +298,10 @@ export const pause   = cid => call(cid, '/me/player/pause', { method: 'PUT' });
 export const next    = cid => call(cid, '/me/player/next',     { method: 'POST' });
 export const prev    = cid => call(cid, '/me/player/previous', { method: 'POST' });
 
+/** Pula para uma posição da faixa, em milissegundos. */
+export const seek = (cid, ms) =>
+  call(cid, '/me/player/seek', { method: 'PUT', query: { position_ms: Math.max(0, Math.round(ms)) } });
+
 export const setVolume = (cid, percent) =>
   call(cid, '/me/player/volume', { method: 'PUT', query: { volume_percent: Math.round(percent) } });
 
