@@ -19,6 +19,13 @@ export const decks = { A: null, B: null };
    Chamado no primeiro toque em qualquer lugar. */
 export function unlock(){
   if(!ctx){
+    // Sem isto, o iPadOS trata o som como "ambiente" e o modo
+    // silencioso do iPad emudece os decks — enquanto o Spotify, sendo
+    // app nativo, continua tocando. Declarar "playback" põe o app na
+    // mesma categoria de um tocador de música.
+    try{ if(navigator.audioSession) navigator.audioSession.type = 'playback'; }
+    catch(e){ /* versões antigas não têm */ }
+
     ctx = new (window.AudioContext || window.webkitAudioContext)();
     master = ctx.createGain();
     master.gain.value = 0.9;
@@ -28,6 +35,15 @@ export function unlock(){
   if(ctx.state === 'suspended') ctx.resume();
   return ctx;
 }
+
+/** Estado do motor de áudio, para a interface poder avisar o operador. */
+export const estado = () => ctx ? ctx.state : 'sem contexto';
+
+/* Ao voltar para o app, o iPadOS costuma deixar o contexto suspenso.
+   Sem retomar aqui, o próximo ▶ não produz som nenhum. */
+document.addEventListener('visibilitychange', () => {
+  if(!document.hidden && ctx && ctx.state === 'suspended') ctx.resume();
+});
 
 export const ready = () => !!ctx;
 
@@ -93,6 +109,10 @@ export async function play(deckId){
   unlock();
   const d = decks[deckId];
   if(!d.objectUrl) return false;
+  // Espera o contexto voltar de fato: tocar com ele suspenso dá silêncio.
+  if(ctx.state !== 'running'){
+    try{ await ctx.resume(); }catch(e){ /* segue e tenta tocar */ }
+  }
   try{ await d.el.play(); return true; }
   catch(e){ console.warn('play bloqueado', e); return false; }
 }
@@ -211,6 +231,27 @@ export async function crossfade(seconds){
   if(to && isLoaded(to)) await fadeIn(to, seconds);
   if(from) fadeOut(from, seconds);
   return { from, to };
+}
+
+/** Toca um tom curto pelo mesmo caminho dos decks (gain → mestre →
+    saída). Se este tom não sai, o problema é o motor de áudio ou o
+    volume do iPad, não o arquivo. */
+export async function testeDeSom(){
+  unlock();
+  if(ctx.state !== 'running'){
+    try{ await ctx.resume(); }catch(e){}
+  }
+  const osc = ctx.createOscillator();
+  const g = ctx.createGain();
+  osc.type = 'sine';
+  osc.frequency.value = 440;
+  g.gain.setValueAtTime(0.0001, ctx.currentTime);
+  g.gain.linearRampToValueAtTime(0.25, ctx.currentTime + 0.05);
+  g.gain.linearRampToValueAtTime(0.0001, ctx.currentTime + 1.1);
+  osc.connect(g); g.connect(master);
+  osc.start();
+  osc.stop(ctx.currentTime + 1.2);
+  return ctx.state;
 }
 
 /* Corta tudo na hora. */
