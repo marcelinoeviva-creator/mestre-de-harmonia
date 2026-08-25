@@ -961,10 +961,9 @@ function openSettings(){
    arquivo JSON para dentro do iPad é trabalhoso, e o caminho normal de
    montar o repertório passou a ser preparar tudo fora e mandar pronto. */
 function openImportUrl(){
-  const fUrl = input({
-    value: new URL('roteiro.json', location.href).href,
-    placeholder:'https://…/roteiro.json'
-  });
+  // Sem endereço padrão: o roteiro é conteúdo de ritual e não fica
+  // publicado junto com o app, que é público.
+  const fUrl = input({ value: '', placeholder:'https://…/roteiro.json' });
   const status = el('p', { class:'hint' }, '');
 
   const puxar = async merge => {
@@ -986,7 +985,8 @@ function openImportUrl(){
     title:'Receber roteiro',
     body: el('div', {},
       field('Endereço do roteiro', fUrl,
-        'Um arquivo .json preparado fora do iPad. O padrão é o roteiro publicado junto com o app.'),
+        'Endereço de um arquivo .json que você mesmo hospede em local reservado. ' +
+        'Para uso normal, prefira <strong>Importar arquivo</strong>, que lê do próprio aparelho.'),
       el('div', { class:'notice' },
         'Somar mantém o que você já montou e só acrescenta o que falta, casando os momentos pelo nome. ' +
         'Substituir apaga o roteiro atual e coloca o novo no lugar.'),
