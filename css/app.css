@@ -439,3 +439,42 @@ h1,h2,h3{ margin:0; font-family:var(--serif); font-weight:600; letter-spacing:.0
 @media (max-height: 700px){
   :root{ --console-h: 234px; }
 }
+
+/* ─────────────── Celular ───────────────────
+   Quatro canais lado a lado não cabem em 400px. Em vez de espremer
+   até virar ilegível, a mesa vira uma faixa que desliza para o lado,
+   com cada canal no tamanho em que ainda se opera com o dedo.
+   ─────────────────────────────────────────── */
+@media (max-width: 700px){
+  :root{ --console-h: 296px; }
+
+  .topbar{ height:58px; padding:0 10px; gap:8px; }
+  .brand-mark{ width:38px; height:38px; }
+  .brand-text h1{ font-size:15px; }
+  .lodge-name{ display:none; }
+  .topbar-actions{ gap:6px; }
+  .icon-btn{ height:36px; padding:0 10px; font-size:13px; }
+  .chip{ height:30px; padding:0 9px; }
+  .chip .chip-label{ display:none; }        /* só a luz, sem o texto */
+
+  .workspace{ grid-template-columns:146px minmax(0, 1fr); }
+  .moment-list button{ min-height:46px; padding:8px 9px; }
+  .moment-name{ font-size:13px; }
+  .pane-head{ padding:10px; }
+  .pane-head h2{ font-size:14px; }
+  .head-actions{ flex-direction:column; gap:6px; }
+  .primary-btn, .ghost-btn{ height:36px; font-size:13px; padding:0 11px; }
+
+  .track-row{ flex-wrap:wrap; min-height:0; }
+  .track-art{ width:38px; height:38px; }
+  .track-actions{ width:100%; justify-content:flex-end; }
+
+  .console-inner{
+    display:flex; gap:10px; padding:22px 10px 10px;
+    overflow-x:auto; -webkit-overflow-scrolling:touch;
+    scroll-snap-type:x proximity;
+  }
+  .console-inner > *{ flex:0 0 230px; scroll-snap-align:center; }
+  .console-inner > .master{ flex-basis:150px; }
+  .fader{ width:52px; }
+}
