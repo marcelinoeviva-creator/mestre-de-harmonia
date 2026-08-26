@@ -32,6 +32,9 @@ function freshState(){
     settings: {
       clientId: '',
       openInApp: true,      // usa o esquema spotify: em vez do link https
+      // 'connect' comanda por rede sem sair do painel (exige o app do
+      // Spotify rodando no aparelho); 'link' sempre abre o Spotify.
+      modoSpotify: 'connect',
       fadeSeconds: 5,
       volumes: { A: 80, B: 80, M: 90, S: 70 }
     },
