@@ -392,7 +392,7 @@ async function confirmarReproducao(trackId){
 }
 
 async function playTrack(t){
-  if(spCanControl() && t.spotifyId){
+  if(spCanControl() && t.spotifyId && st.settings.modoSpotify !== 'link'){
     try{
       await SP.playTrack(st.settings.clientId, t.spotifyId, spDeviceId || undefined);
       toast('Enviando ao Spotify…');
@@ -400,13 +400,22 @@ async function playTrack(t){
       pollSpotify();
       if(r.ok){
         toast(r.aparelho ? `Tocando em ${r.aparelho}` : 'Tocando: ' + t.title);
-      }else{
-        toast(
-          r.aparelho
-            ? `O Spotify recebeu o comando mas não começou a tocar. A saída está em "${r.aparelho}" — se não for este aparelho, toque em Saída no canal S e escolha o certo.`
-            : 'O Spotify recebeu o comando mas não há aparelho tocando. Abra o app do Spotify, deixe tocar 1 segundo e tente de novo.',
-          true);
+        return;
       }
+
+      /* Não começou. O comando por rede depende do app do Spotify estar
+         rodando; abrir a faixa nele sempre funciona. Cair para esse
+         caminho serve melhor que um aviso vermelho no meio da sessão —
+         a não ser que um deck esteja no ar, porque sair do app faria o
+         iPadOS silenciar a mesa. */
+      const mesaNoAr = A.isPlaying('A') || A.isPlaying('B');
+      if(mesaNoAr){
+        toast(`O Spotify não começou a tocar (saída em "${r.aparelho || 'desconhecida'}"). ` +
+              'Não abri o Spotify porque isso pararia os decks A/B.', true);
+        return;
+      }
+      toast('O Spotify não respondeu ao comando. Abrindo no app…');
+      SP.openExternally('track', t.spotifyId, st.settings.openInApp);
       return;
     }catch(e){
       if(e.code === 'NO_DEVICE'){
@@ -896,6 +905,12 @@ async function openDiagnostico(){
 
 function openSettings(){
   const cid = input({ value: st.settings.clientId, placeholder:'cole aqui o Client ID' });
+  const modoSp = el('select', {},
+    el('option', { value:'connect', selected: st.settings.modoSpotify !== 'link' ? '' : null },
+      'Comandar daqui, sem sair do painel'),
+    el('option', { value:'link', selected: st.settings.modoSpotify === 'link' ? '' : null },
+      'Sempre abrir o app do Spotify')
+  );
   const openApp = el('select', {},
     el('option', { value:'app', selected: st.settings.openInApp ? '' : null }, 'Abrir no app do Spotify'),
     el('option', { value:'web', selected: st.settings.openInApp ? null : '' }, 'Abrir no navegador')
@@ -942,7 +957,13 @@ function openSettings(){
       el('p', { class:'hint' },
         'Toca um bipe de 1 segundo pelo mesmo caminho dos decks A e B. Serve para separar problema de arquivo de problema de som.')),
     el('div', { class:'field', style:'margin-top:16px' },
-      el('label', {}, 'Ao tocar uma peça sem conexão'), openApp),
+      el('label', {}, 'Como tocar as peças do Spotify'), modoSp,
+      el('p', { class:'hint' },
+        'Comandar daqui é mais elegante, mas exige o app do Spotify rodando no aparelho — ' +
+        'se ele for fechado, o comando não chega e nada toca. Abrir o app sempre funciona, ' +
+        'ao custo de trocar de tela.')),
+    el('div', { class:'field' },
+      el('label', {}, 'Ao abrir a peça no Spotify'), openApp),
 
     el('h4', { style:'margin:22px 0 10px;color:var(--gold)' }, 'Cópia de segurança'),
     el('p', { class:'hint' }, 'Guarde seu roteiro. O JSON leva momentos, peças, links e anotações — os arquivos de áudio ficam só no iPad e precisam ser reimportados.'),
@@ -967,6 +988,7 @@ function openSettings(){
     buttons:[{ label:'Fechar', kind:'primary', onClick: c => {
       st.settings.clientId = cid.value.trim();
       st.settings.openInApp = openApp.value === 'app';
+      st.settings.modoSpotify = modoSp.value;
       S.save(); paintSpotify(); c();
     }}]
   });
