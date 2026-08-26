@@ -374,12 +374,39 @@ function trackRow(t, moment, i, total){
   );
 }
 
+/* O Spotify aceita o comando e responde sucesso mesmo quando nada
+   começa a tocar — som mudo, aparelho errado, faixa indisponível na
+   região. Anunciar "tocando" sem conferir é mentir para o operador no
+   meio da sessão. */
+async function confirmarReproducao(trackId){
+  for(let i = 0; i < 4; i++){
+    await new Promise(r => setTimeout(r, 700));
+    try{
+      const e = await SP.playbackState(st.settings.clientId);
+      if(e?.is_playing && e?.item?.id === trackId)
+        return { ok: true, aparelho: e.device?.name || '' };
+      if(i === 3) return { ok: false, aparelho: e?.device?.name || '', tocando: !!e?.is_playing };
+    }catch(err){ if(i === 3) return { ok: false, aparelho: '', erro: err.message }; }
+  }
+  return { ok: false, aparelho: '' };
+}
+
 async function playTrack(t){
   if(spCanControl() && t.spotifyId){
     try{
       await SP.playTrack(st.settings.clientId, t.spotifyId, spDeviceId || undefined);
-      toast('Tocando: ' + t.title);
-      setTimeout(pollSpotify, 500);
+      toast('Enviando ao Spotify…');
+      const r = await confirmarReproducao(t.spotifyId);
+      pollSpotify();
+      if(r.ok){
+        toast(r.aparelho ? `Tocando em ${r.aparelho}` : 'Tocando: ' + t.title);
+      }else{
+        toast(
+          r.aparelho
+            ? `O Spotify recebeu o comando mas não começou a tocar. A saída está em "${r.aparelho}" — se não for este aparelho, toque em Saída no canal S e escolha o certo.`
+            : 'O Spotify recebeu o comando mas não há aparelho tocando. Abra o app do Spotify, deixe tocar 1 segundo e tente de novo.',
+          true);
+      }
       return;
     }catch(e){
       if(e.code === 'NO_DEVICE'){
