@@ -129,6 +129,8 @@ ol.passos li::before{content:counter(p); position:absolute; left:0; top:-1px; wi
 
 .nota{background:#1b2033; border-left:3px solid var(--gold); border-radius:8px;
   padding:14px 16px; font-size:15px; color:#ccd6ea; margin:20px 0}
+ul.lista{margin:0 0 16px; padding-left:20px}
+ul.lista li{margin-bottom:9px; color:#c3cde5}
 .faq{border-top:1px solid var(--line); padding:18px 0}
 .faq:last-child{border-bottom:1px solid var(--line)}
 .faq h3{margin-bottom:4px}
@@ -155,7 +157,7 @@ footer a{color:var(--gold-hi)}
       cada peça a um toque, e uma mesa de som para a trilha entrar por baixo antes da anterior acabar.</p>
 
     <div class="plataformas">
-      <span>iPad</span><span>Tablet Android</span><span>Celular Android</span><span>Funciona sem internet</span>
+      <span>iPad</span><span>Tablet Android</span><span>Celular Android</span><span>Funciona sem internet</span><span>Sem servidor, sem cadastro</span>
     </div>
 
     <div class="cta">
@@ -286,11 +288,17 @@ footer a{color:var(--gold-hi)}
       <figcaption>Cola-se o link e o nome vem preenchido. A anotação de execução é a sua deixa.</figcaption>
     </figure>
 
-    <h3 style="margin-top:24px">Conectar o Spotify <span class="muted" style="font-weight:400">(opcional)</span></h3>
-    <p>Sem configurar nada o app já funciona: tocar abre o Spotify. Conectar permite comandar a
-      reprodução sem sair do painel, ver a posição da música e controlar o volume pelo canal S.
-      Exige conta <strong>Premium</strong> e um cadastro gratuito de desenvolvedor no Spotify —
-      o passo a passo está dentro do app, em Ajustes.</p>
+    <h3 style="margin-top:24px">Como as peças tocam</h3>
+    <p>Há dois caminhos, escolhidos em Ajustes:</p>
+    <ul class="lista">
+      <li><strong>Sempre abrir o app do Spotify</strong> — funciona sempre, sem configurar nada.
+        Troca de tela ao tocar. É o caminho recomendado para a sessão.</li>
+      <li><strong>Comandar sem sair do painel</strong> — mais elegante, mantém você na mesa de som.
+        Exige conta <strong>Premium</strong>, um cadastro gratuito de desenvolvedor no Spotify e o
+        app do Spotify aberto em segundo plano. Se ele for fechado, o comando não chega.</li>
+    </ul>
+    <p>O aplicativo confere se a música realmente começou. Quando o comando não pega, ele abre a
+      faixa no Spotify sozinho, em vez de deixar você no silêncio.</p>
 
     <h3 style="margin-top:24px">Cópia de segurança</h3>
     <p><strong>Ajustes → Exportar roteiro</strong> gera um arquivo com momentos, peças, links e
@@ -334,6 +342,12 @@ footer a{color:var(--gold-hi)}
     </div>
 
     <div class="faq">
+      <h3>Onde ficam guardados o roteiro e as anotações?</h3>
+      <p>Só no aparelho. O aplicativo não tem servidor nem cadastro, e nada do que você escreve
+        nele é enviado para fora. Veja a seção <a href="#sigilo">Sigilo</a>.</p>
+    </div>
+
+    <div class="faq">
       <h3>Quanto custa?</h3>
       <p>Nada para instalar e usar. Se o aplicativo servir à sua Loja, pedimos uma contribuição
         voluntária para a obra beneficente que ele sustenta — o valor sugerido está acima.</p>
@@ -345,6 +359,52 @@ footer a{color:var(--gold-hi)}
         primeiro plano. Deixe o painel aberto durante a sessão — ele mantém a tela acesa sozinho
         enquanto houver som.</p>
     </div>
+  </div>
+</section>
+
+<section id="sigilo">
+  <div class="wrap">
+    <h2>Sigilo</h2>
+    <p class="muted">Um aplicativo que guarda a sequência dos trabalhos de uma Loja precisa
+      responder a uma pergunta antes de qualquer outra: para onde vão esses dados?</p>
+
+    <div class="grid" style="margin-bottom:22px">
+      <div class="card">
+        <h3>Não existe servidor</h3>
+        <p>O aplicativo não tem servidor próprio, nem banco de dados, nem cadastro. Não há conta
+          para criar, nem senha, nem nuvem. Ele roda inteiro dentro do aparelho.</p>
+      </div>
+      <div class="card">
+        <h3>O roteiro fica no aparelho</h3>
+        <p>Nomes dos momentos, ordem da sessão, anotações de execução e arquivos de áudio ficam
+          gravados só no tablet. <strong>Nada disso é enviado para lugar nenhum.</strong></p>
+      </div>
+      <div class="card">
+        <h3>Nenhuma Loja vê a outra</h3>
+        <p>Não há repositório comum de roteiros. Cada Loja monta o seu, no seu aparelho, e ele
+          não sai de lá. Nem quem desenvolveu o aplicativo tem acesso.</p>
+      </div>
+      <div class="card">
+        <h3>A cópia é sua</h3>
+        <p>A cópia de segurança gera um arquivo que fica com você, para guardar onde julgar
+          adequado. Não sobe automaticamente para nenhum serviço.</p>
+      </div>
+    </div>
+
+    <h3>O que sai do aparelho, e só isso</h3>
+    <p>Como o repertório é do Spotify, o aplicativo conversa com o Spotify — e apenas com ele:</p>
+    <ul class="lista">
+      <li>Ao cadastrar uma peça, o <strong>identificador da faixa</strong> é enviado ao Spotify
+        para buscar o nome e a capa.</li>
+      <li>Ao tocar, o <strong>comando de reprodução</strong> vai ao Spotify, como em qualquer
+        aparelho ligado à sua conta.</li>
+    </ul>
+    <p>Em nenhum dos dois casos vai junto o nome do momento, a ordem da sessão ou a anotação de
+      execução. O Spotify sabe apenas qual música foi pedida — exatamente como saberia se você
+      apertasse play no aplicativo dele.</p>
+
+    <div class="nota">Se a sua Loja preferir não usar o Spotify, o aplicativo funciona só com
+      arquivos de áudio no próprio tablet — e aí <strong>nada</strong> sai do aparelho.</div>
   </div>
 </section>
 
