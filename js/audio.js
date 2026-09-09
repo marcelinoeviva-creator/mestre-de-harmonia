@@ -15,35 +15,71 @@ let master = null;
 
 export const decks = { A: null, B: null };
 
-/* O iPadOS só libera o áudio dentro de um gesto do usuário.
-   Chamado no primeiro toque em qualquer lugar. */
-export function unlock(){
-  if(!ctx){
-    // Sem isto, o iPadOS trata o som como "ambiente" e o modo
-    // silencioso do iPad emudece os decks — enquanto o Spotify, sendo
-    // app nativo, continua tocando. Declarar "playback" põe o app na
-    // mesma categoria de um tocador de música.
-    try{ if(navigator.audioSession) navigator.audioSession.type = 'playback'; }
-    catch(e){ /* versões antigas não têm */ }
+/* Categoria de áudio e por que ela precisa de cuidado:
 
+   "playback" é o que faz os decks tocarem com o iPad no silencioso —
+   sem isso ficam mudos. Mas no iPadOS ela NÃO é mixável: ativá-la
+   interrompe o som dos outros aplicativos. Se o app assumir essa
+   categoria só por voltar ao primeiro plano, ele pausa o Spotify sem
+   ter nada para tocar.
+
+   Por isso a separação abaixo: criar o motor é inofensivo e pode
+   acontecer a qualquer momento; ATIVAR só quando um deck vai mesmo
+   soar, e devolver a sessão assim que os dois silenciam.
+   ─────────────────────────────────────────── */
+
+function sessao(tipo){
+  try{ if(navigator.audioSession) navigator.audioSession.type = tipo; }
+  catch(e){ /* versões antigas não têm */ }
+}
+
+/** Cria o motor sem ativá-lo. Não toma o áudio de ninguém. */
+export function garantirContexto(){
+  if(!ctx){
     ctx = new (window.AudioContext || window.webkitAudioContext)();
     master = ctx.createGain();
     master.gain.value = 0.9;
     master.connect(ctx.destination);
     for(const id of ['A','B']) decks[id] = makeDeck(id);
+    sessao('auto');          // explícito: nasce mixável, dividindo o áudio
   }
-  if(ctx.state === 'suspended') ctx.resume();
   return ctx;
 }
 
+/** Assume o áudio do aparelho. Só quando um deck vai tocar. */
+export async function ativar(){
+  garantirContexto();
+  sessao('playback');
+  if(ctx.state !== 'running'){
+    try{ await ctx.resume(); }catch(e){ /* segue e tenta tocar */ }
+  }
+  return ctx;
+}
+
+/* Compatibilidade: quem só precisa do motor existindo. */
+export const unlock = garantirContexto;
+
+/** Devolve o áudio ao sistema quando os dois decks estão calados —
+    é o que deixa o Spotify seguir tocando por cima do painel. */
+let timerLiberar = null;
+export function liberarSeCalado(){
+  clearTimeout(timerLiberar);
+  timerLiberar = setTimeout(() => {
+    if(!ctx || isPlaying('A') || isPlaying('B')) return;
+    sessao('auto');
+    if(ctx.state === 'running') ctx.suspend().catch(() => {});
+  }, 400);   // margem para transições, em que um deck para e outro entra
+}
+
+/* Ao voltar para o app, retoma apenas se havia deck no ar. Retomar à
+   toa era o que interrompia a música do Spotify. */
+document.addEventListener('visibilitychange', () => {
+  if(document.hidden || !ctx) return;
+  if(isPlaying('A') || isPlaying('B')) ativar();
+});
+
 /** Estado do motor de áudio, para a interface poder avisar o operador. */
 export const estado = () => ctx ? ctx.state : 'sem contexto';
-
-/* Ao voltar para o app, o iPadOS costuma deixar o contexto suspenso.
-   Sem retomar aqui, o próximo ▶ não produz som nenhum. */
-document.addEventListener('visibilitychange', () => {
-  if(!document.hidden && ctx && ctx.state === 'suspended') ctx.resume();
-});
 
 export const ready = () => !!ctx;
 
@@ -106,18 +142,18 @@ export const isPlaying = deckId => { const d = decks[deckId]; return !!(d && d.o
 /* ── Transporte ───────────────────────────── */
 
 export async function play(deckId){
-  unlock();
+  garantirContexto();
   const d = decks[deckId];
   if(!d.objectUrl) return false;
-  // Espera o contexto voltar de fato: tocar com ele suspenso dá silêncio.
-  if(ctx.state !== 'running'){
-    try{ await ctx.resume(); }catch(e){ /* segue e tenta tocar */ }
-  }
+  await ativar();                 // só aqui o app toma o áudio do aparelho
   try{ await d.el.play(); return true; }
   catch(e){ console.warn('play bloqueado', e); return false; }
 }
 
-export function pause(deckId){ const d = decks[deckId]; if(d?.objectUrl) d.el.pause(); }
+export function pause(deckId){
+  const d = decks[deckId];
+  if(d?.objectUrl){ d.el.pause(); liberarSeCalado(); }
+}
 
 export async function toggle(deckId){
   return isPlaying(deckId) ? (pause(deckId), false) : await play(deckId);
@@ -127,6 +163,7 @@ export function stop(deckId){
   const d = decks[deckId]; if(!d?.objectUrl) return;
   d.el.pause(); d.el.currentTime = 0;
   cancelFade(d); applyGain(d, d.level);
+  liberarSeCalado();
 }
 
 export function seekRatio(deckId, ratio){
@@ -213,6 +250,7 @@ export function fadeOut(deckId, seconds, { stopAtEnd = true } = {}){
     if(stopAtEnd){ d.el.pause(); d.el.currentTime = 0; }
     applyGain(d, d.level, 0.02);
     d.fading = null;
+    liberarSeCalado();
   }, seconds * 1000 + 60);
   d.fading = { timer };
 }
@@ -237,10 +275,7 @@ export async function crossfade(seconds){
     saída). Se este tom não sai, o problema é o motor de áudio ou o
     volume do iPad, não o arquivo. */
 export async function testeDeSom(){
-  unlock();
-  if(ctx.state !== 'running'){
-    try{ await ctx.resume(); }catch(e){}
-  }
+  await ativar();
   const osc = ctx.createOscillator();
   const g = ctx.createGain();
   osc.type = 'sine';
@@ -251,6 +286,7 @@ export async function testeDeSom(){
   osc.connect(g); g.connect(master);
   osc.start();
   osc.stop(ctx.currentTime + 1.2);
+  setTimeout(liberarSeCalado, 1400);
   return ctx.state;
 }
 
@@ -264,6 +300,7 @@ export function panic(){
     d.el.pause();
     applyGain(d, d.level, 0.02);
   }
+  liberarSeCalado();
 }
 
 /* Mantém a tela do iPad acordada enquanto houver som — sem isso
