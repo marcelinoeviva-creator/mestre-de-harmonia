@@ -513,11 +513,20 @@ function conferirInicio(t){
   setTimeout(() => tentar(0), esperas[0]);
 }
 
+/* O iPadOS congela o Spotify parado em segundo plano, e congelado ele
+   não recebe comando nenhum. Nesse caso a única forma de a música tocar
+   é abrir o Spotify — e é o que o app sempre fez, até a revisão que
+   trocou isso por um aviso e deixou a deixa em silêncio. Voltou.
+   Exceção: com deck no ar, abrir o Spotify silenciaria a mesa. */
 function avisarSpotifyFechado(t){
-  alerta('O app do Spotify está fechado no iPad, por isso o comando não chegou.', [
-    { label:'Abrir e tocar', primaria:true, onClick: () => SP.openExternally('track', t.spotifyId, st.settings.openInApp) },
-    { label:'Escolher saída', onClick: openDevices }
-  ]);
+  if(A.isPlaying('A') || A.isPlaying('B')){
+    alerta('O Spotify está adormecido no iPad. Abrir o Spotify agora pararia os decks A/B.', [
+      { label:'Abrir e tocar', primaria:true, onClick: () => SP.openExternally('track', t.spotifyId, st.settings.openInApp) }
+    ]);
+    return;
+  }
+  toast('O Spotify estava adormecido. Abrindo para tocar…');
+  SP.openExternally('track', t.spotifyId, st.settings.openInApp);
 }
 
 function avisarNaoComecou(t, e){
@@ -962,9 +971,9 @@ function paintSpotify(){
   }
   if(spDormindo){
     chip.className = 'chip chip-warn';
-    label.textContent = 'Spotify fechado';
-    $('#spTitle').textContent = 'O app do Spotify está fechado';
-    $('#spDevice').textContent = 'toque na luz do topo para abrir';
+    label.textContent = 'Spotify adormecido';
+    $('#spTitle').textContent = 'O iPad pôs o Spotify para dormir';
+    $('#spDevice').textContent = 'a próxima peça vai abrir o Spotify';
     $('#spToggle').classList.remove('on');
     return;
   }
