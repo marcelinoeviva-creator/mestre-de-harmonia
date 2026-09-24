@@ -317,7 +317,21 @@ export const me = cid => call(cid, '/me');
 /* market=from_token faz o Spotify contar, em linked_from, quando trocou a
    faixa pedida pela versão do país da conta. Sem isso não há como saber
    que a música que toca é a que foi pedida. */
-export const playbackState = cid => call(cid, '/me/player', { query: { market: 'from_token' } });
+let semMarket = false;
+export async function playbackState(cid){
+  if(semMarket) return call(cid, '/me/player');
+  try{
+    return await call(cid, '/me/player', { query: { market: 'from_token' } });
+  }catch(e){
+    // Se o parâmetro for recusado, a leitura de estado quebra inteira — e
+    // com ela a conferência de toda peça. Volta à chamada de 09/09.
+    if(e.code === '400' || e.code === 'FORBIDDEN' || e.code === '403'){
+      semMarket = true;
+      return call(cid, '/me/player');
+    }
+    throw e;
+  }
+}
 
 /** A faixa tocando é a que foi pedida? Considera a troca de versão
     regional, que muda o código da faixa sem mudar a música. */

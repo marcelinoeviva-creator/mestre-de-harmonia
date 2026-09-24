@@ -362,9 +362,9 @@ function marcarLinhasAoVivo(){
   let iniciando = null;
   if(spState?.is_playing && spState.item){
     for(const t of Object.values(st.tracks))
-      if(t.spotifyId && SP.mesmaFaixa(spState.item, t.spotifyId)) noAr.add(t.id);
+      if(t.spotifyId && ehAPeca(spState.item, t)) noAr.add(t.id);
   }
-  if(pedido && !noAr.has(pedido.trackId) && !pedido.confirmado) iniciando = pedido.trackId;
+  if(pedido && !noAr.has(pedido.trackId) && !pedido.confirmado && !pedido.incerto) iniciando = pedido.trackId;
 
   const proxima = proximaDeixa()?.t.id;
   for(const r of $$('#trackList .track-row')){
@@ -434,6 +434,14 @@ async function playTrack(t){
     return tocarNoSpotify(t);
 
   if(t.spotifyId){
+    const porque = st.settings.modoSpotify === 'link'
+      ? 'em Ajustes está marcado "Sempre abrir o app do Spotify"'
+      : !SP.connected() ? 'o Spotify não está conectado (veja a luz no topo)'
+      : spFault ? 'o Spotify recusou o acesso (veja a luz no topo)'
+      : spProfile?.product === 'free' ? 'conta grátis não aceita comando pelo painel'
+      : 'a conexão com o Spotify ainda está sendo verificada';
+    registrarMotivo(porque);
+    toast('Abrindo no Spotify: ' + porque);
     SP.openExternally('track', t.spotifyId, st.settings.openInApp);
     return;
   }
@@ -445,6 +453,7 @@ async function tocarNoSpotify(t){
   const cid = st.settings.clientId;
   fecharAlerta();
   pedido = { id: t.spotifyId, trackId: t.id, titulo: t.title, confirmado: false, fim: 0 };
+  motivoAbertura = null;
   clearTimeout(timerGuarda);
   $('#spTitle').textContent = t.title;
   $('#spDevice').textContent = 'iniciando…';
@@ -467,21 +476,41 @@ async function tocarNoSpotify(t){
 
 /** Confere por trás. A peça já está acesa; aqui só se descobre se deu
     certo. Silencioso no sucesso, que é o caso comum. */
+const normal = x => (x || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+
+/** É a peça pedida? Pelo código, pela versão regional, ou pelo nome —
+    o nome veio do próprio Spotify no cadastro, e não muda com a versão. */
+function ehAPeca(item, t){
+  if(!item) return false;
+  return SP.mesmaFaixa(item, t.spotifyId) || (!!t.title && normal(item.name) === normal(t.title));
+}
+
+/** Confere por trás. A peça já está acesa; aqui só se descobre se deu
+    certo. Silencioso no sucesso, que é o caso comum. Só abre o Spotify
+    com prova de que ele não tocou: sem conseguir ler o estado, não há
+    prova, e o pedido foi aceito — abrir seria alarme falso. */
 function conferirInicio(t){
   const cid = st.settings.clientId;
-  const esperas = [450, 600, 900, 900, 900];          // ~3,7 s no total, sem travar nada
+  const esperas = [450, 600, 900, 900, 900];
+  let lido = null;
   const tentar = async n => {
     if(!pedido || pedido.id !== t.spotifyId) return;   // outro toque passou por cima
-    let e = null;
-    try{ e = await SP.playbackState(cid); }catch(err){}
-    if(e) aplicarEstado(e);
-    if(e?.is_playing && SP.mesmaFaixa(e.item, t.spotifyId)){
+    let e;
+    try{ e = await SP.playbackState(cid); lido = e || { vazio: true }; aplicarEstado(e); }
+    catch(err){ e = undefined; }
+    if(e?.is_playing && ehAPeca(e.item, t)){
       pedido.confirmado = true;
       marcarLinhasAoVivo();
       return;
     }
     if(n + 1 < esperas.length) return setTimeout(() => tentar(n + 1), esperas[n + 1]);
-    avisarNaoComecou(t, e);
+    if(!lido){                                          // não conseguiu ler: não conclui nada
+      pedido.incerto = true;                            // para de piscar "iniciando"
+      $('#spDevice').textContent = 'sem resposta do Spotify para confirmar';
+      marcarLinhasAoVivo();
+      return;
+    }
+    avisarNaoComecou(t, lido.vazio ? null : lido);
   };
   setTimeout(() => tentar(0), esperas[0]);
 }
@@ -490,7 +519,15 @@ function conferirInicio(t){
    segundo plano, ou ele não começou —, abrir a faixa no Spotify é o que
    faz a música tocar. É o que o app fazia em 09/09. Exceção: com deck
    no ar, abrir o Spotify silenciaria a mesa; aí só avisa. */
+let motivoAbertura = null;      // { texto, ate } — por que o app abriu o Spotify
+
+function registrarMotivo(texto){
+  motivoAbertura = { texto, ate: Date.now() + 60000 };
+  const l = $('#spDevice'); if(l) l.textContent = 'abriu o Spotify: ' + texto;
+}
+
 function abrirNoSpotify(t, msg){
+  registrarMotivo(msg.replace(/\s*Abrindo.*$/, ''));
   if(A.isPlaying('A') || A.isPlaying('B')){
     alerta('O Spotify não respondeu. Abrir o Spotify agora pararia os decks A/B.', [
       { label:'Abrir e tocar', primaria:true, onClick: () => SP.openExternally('track', t.spotifyId, st.settings.openInApp) }
@@ -501,9 +538,13 @@ function abrirNoSpotify(t, msg){
   SP.openExternally('track', t.spotifyId, st.settings.openInApp);
 }
 
-function avisarNaoComecou(t){
+function avisarNaoComecou(t, e){
   pedido = null; marcarLinhasAoVivo(); paintSpotify();
-  abrirNoSpotify(t, 'O Spotify não começou a tocar. Abrindo no app…');
+  const onde = e?.device?.name ? ` em "${e.device.name}"` : '';
+  const oque = !e ? 'não informou nenhum aparelho ativo'
+             : e.is_playing ? `continuou tocando "${e.item?.name || '?'}"${onde}`
+             : `ficou parado${onde}`;
+  abrirNoSpotify(t, `O Spotify aceitou o pedido mas ${oque}. Abrindo no app…`);
 }
 
 async function cue(t, deckId, autoplay = false){
@@ -852,7 +893,7 @@ function aplicarEstado(e){
    coisa, pausa. Troca no meio da peça não é mexida: essa foi o operador. */
 function vigiarEmenda(e){
   if(!pedido) return;
-  const ehPedida = e?.item && SP.mesmaFaixa(e.item, pedido.id);
+  const ehPedida = e?.item && (SP.mesmaFaixa(e.item, pedido.id) || (!!pedido.titulo && normal(e.item.name) === normal(pedido.titulo)));
 
   if(ehPedida && e.is_playing){
     pedido.confirmado = true;
@@ -913,9 +954,11 @@ function paintSpotify(){
   const it = spState?.item;
   if(it) $('#spTitle').textContent = `${it.name} — ${(it.artists||[]).map(a=>a.name).join(', ')}`;
   else if(!pedido) $('#spTitle').textContent = 'Nada tocando';
-  $('#spDevice').textContent = spState?.device
-    ? spState.device.name + (spState.device.supports_volume === false ? ' · volume no aparelho' : '')
-    : 'sem aparelho ativo';
+  $('#spDevice').textContent = (motivoAbertura && Date.now() < motivoAbertura.ate)
+    ? 'abriu o Spotify: ' + motivoAbertura.texto
+    : spState?.device
+      ? spState.device.name + (spState.device.supports_volume === false ? ' · volume no aparelho' : '')
+      : 'sem aparelho ativo';
   $('#spToggle').textContent = spState?.is_playing ? '❚❚' : '▶';
   $('#spToggle').classList.toggle('on', !!spState?.is_playing);
 }
