@@ -20,6 +20,25 @@ let volTimer = null;
    para acender a peça na hora e confirmar em segundo plano. */
 let pedido = null;        // { id, trackId, titulo, confirmado, incerto }
 
+/* Registro do que o Spotify responde a cada peça, com o tempo de cada
+   resposta. Existe para diagnosticar no iPad de verdade: uma foto dele
+   mostra se o pedido chegou, se a música começou, quando, e se o próprio
+   painel estava com o áudio do aparelho no instante do toque. */
+const registro = [];
+let t0Pedido = 0;
+function reg(msg){
+  const hora = new Date().toTimeString().slice(0, 8);
+  const rel = t0Pedido ? ` +${((performance.now() - t0Pedido) / 1000).toFixed(1)}s` : '';
+  registro.push(`${hora}${rel}  ${msg}`);
+  if(registro.length > 80) registro.shift();
+}
+const descreveEstado = e => !e ? 'nenhum aparelho ativo'
+  : `${e.is_playing ? 'TOCANDO' : 'parado'} "${e.item?.name || '—'}" em ${e.device?.name || '?'} (${Math.round((e.progress_ms || 0) / 1000)}s)`;
+const somDoPainel = () => {
+  const as = navigator.audioSession;
+  return `áudio do painel: ${A.estado()}` + (as ? `, sessão ${as.type}/${as.state || '?'}` : '');
+};
+
 /* ═══════════ Início ═══════════ */
 
 async function boot(){
@@ -42,6 +61,7 @@ async function boot(){
   // abrir o Spotify, por exemplo). Ao voltar, o tick precisa pedir de novo.
   document.addEventListener('visibilitychange', () => {
     if(!document.hidden) tick.acordado = null;
+    reg(document.hidden ? 'painel foi para trás' : 'painel voltou à frente · ' + somDoPainel());
   });
 
   await initSpotify();
@@ -451,6 +471,8 @@ async function tocarNoSpotify(t){
   const cid = st.settings.clientId;
   fecharAlerta();
   pedido = { id: t.spotifyId, trackId: t.id, titulo: t.title, confirmado: false };
+  t0Pedido = performance.now();
+  reg(`TOQUE "${t.title}" · antes: ${descreveEstado(spState)} · ${somDoPainel()}`);
   motivoAbertura = null;
   $('#spTitle').textContent = t.title;
   $('#spDevice').textContent = 'iniciando…';
@@ -463,7 +485,9 @@ async function tocarNoSpotify(t){
        achava; o Spotify do Mac entra nessa lista, e as músicas foram
        parar lá. Não se escolhe aparelho por conta própria. */
     await SP.playTrack(cid, t.spotifyId, spDeviceId || undefined);
+    reg('pedido aceito pelo Spotify' + (spDeviceId ? '' : ' (sem aparelho indicado)'));
   }catch(e){
+    reg(`pedido recusado: ${e.code || ''} ${e.message}`);
     pedido = null; marcarLinhasAoVivo(); paintSpotify();
     if(e.code === 'NO_DEVICE') return abrirNoSpotify(t, 'O Spotify estava adormecido. Abrindo para tocar…');
     return toast(e.message, true);
@@ -488,14 +512,18 @@ function ehAPeca(item, t){
     prova, e o pedido foi aceito — abrir seria alarme falso. */
 function conferirInicio(t){
   const cid = st.settings.clientId;
-  const esperas = [450, 600, 900, 900, 900];
+  // "Só avisar" espera mais: serve também para ver se a música começa tarde.
+  const esperas = st.settings.seNaoComecar === 'avisar'
+    ? [450, 600, 900, 900, 900, 1500, 1500, 2000, 2000, 2500]
+    : [450, 600, 900, 900, 900];
   let lido = null;
   const tentar = async n => {
     if(!pedido || pedido.id !== t.spotifyId) return;   // outro toque passou por cima
     let e;
-    try{ e = await SP.playbackState(cid); lido = e || { vazio: true }; aplicarEstado(e); }
-    catch(err){ e = undefined; }
+    try{ e = await SP.playbackState(cid); lido = e || { vazio: true }; aplicarEstado(e); reg(`leitura ${n + 1}: ${descreveEstado(e)}`); }
+    catch(err){ e = undefined; reg(`leitura ${n + 1} falhou: ${err.message}`); }
     if(e?.is_playing && ehAPeca(e.item, t)){
+      reg('CONFIRMADO: a peça está tocando');
       pedido.confirmado = true;
       marcarLinhasAoVivo();
       return;
@@ -518,13 +546,22 @@ function conferirInicio(t){
    no ar, abrir o Spotify silenciaria a mesa; aí só avisa. */
 let motivoAbertura = null;      // { texto, ate } — por que o app abriu o Spotify
 
-function registrarMotivo(texto){
-  motivoAbertura = { texto, ate: Date.now() + 60000 };
-  const l = $('#spDevice'); if(l) l.textContent = 'abriu o Spotify: ' + texto;
+function registrarMotivo(texto, prefixo = 'abriu o Spotify: '){
+  motivoAbertura = { texto: prefixo + texto, ate: Date.now() + 60000 };
+  const l = $('#spDevice'); if(l) l.textContent = motivoAbertura.texto;
 }
 
 function abrirNoSpotify(t, msg){
-  registrarMotivo(msg.replace(/\s*Abrindo.*$/, ''));
+  const avisar = st.settings.seNaoComecar === 'avisar';
+  registrarMotivo(msg.replace(/\s*Abrindo.*$/, ''), avisar ? 'não tocou: ' : undefined);
+  if(avisar){
+    reg('não abriu o Spotify (Ajustes: só avisar)');
+    alerta(msg.replace(/\s*Abrindo.*$/, ''), [
+      { label:'Abrir e tocar', primaria:true, onClick: () => SP.openExternally('track', t.spotifyId, st.settings.openInApp) }
+    ], 30000);
+    return;
+  }
+  reg('abrindo o Spotify');
   if(A.isPlaying('A') || A.isPlaying('B')){
     alerta('O Spotify não respondeu. Abrir o Spotify agora pararia os decks A/B.', [
       { label:'Abrir e tocar', primaria:true, onClick: () => SP.openExternally('track', t.spotifyId, st.settings.openInApp) }
@@ -937,7 +974,7 @@ function paintSpotify(){
   if(it) $('#spTitle').textContent = `${it.name} — ${(it.artists||[]).map(a=>a.name).join(', ')}`;
   else if(!pedido) $('#spTitle').textContent = 'Nada tocando';
   $('#spDevice').textContent = (motivoAbertura && Date.now() < motivoAbertura.ate)
-    ? 'abriu o Spotify: ' + motivoAbertura.texto
+    ? motivoAbertura.texto
     : spState?.device
       ? spState.device.name + (spState.device.supports_volume === false ? ' · volume no aparelho' : '')
       : 'sem aparelho ativo';
@@ -1019,6 +1056,14 @@ function diagBox(){
 /* Roda uma bateria de chamadas e mostra a resposta crua de cada uma.
    Existe para acabar com o chute: o Spotify diz "403 Forbidden" sem
    explicar, então a única saída é comparar o que passa e o que não passa. */
+/** Mostra o registro das últimas peças — para fotografar e mandar. */
+function openRegistro(){
+  const pre = el('pre', { style:'white-space:pre-wrap;font-size:12px;line-height:1.45;margin:0;max-height:60vh;overflow:auto' },
+    registro.length ? registro.slice().reverse().join('\n') : 'Nada registrado ainda. Toque uma peça e volte aqui.');
+  modal({ title:'Registro do Spotify (mais recente no alto)', body: pre,
+    buttons:[{ label:'Fechar', kind:'primary', onClick: c => c() }] });
+}
+
 async function openDiagnostico(){
   const box = el('div', {}, el('p', { class:'hint' }, 'Testando…'));
   modal({ title:'Diagnóstico do Spotify', body: box, buttons:[{ label:'Fechar', kind:'primary', onClick: c => c() }] });
@@ -1059,6 +1104,12 @@ function openSettings(){
     el('option', { value:'link', selected: st.settings.modoSpotify === 'link' ? '' : null },
       'Sempre abrir o app do Spotify')
   );
+  const seNao = el('select', {},
+    el('option', { value:'abrir', selected: st.settings.seNaoComecar !== 'avisar' ? '' : null },
+      'Abrir o Spotify para tocar'),
+    el('option', { value:'avisar', selected: st.settings.seNaoComecar === 'avisar' ? '' : null },
+      'Ficar no painel, esperar até 15 s e só avisar')
+  );
   const openApp = el('select', {},
     el('option', { value:'app', selected: st.settings.openInApp ? '' : null }, 'Abrir no app do Spotify'),
     el('option', { value:'web', selected: st.settings.openInApp ? null : '' }, 'Abrir no navegador')
@@ -1090,6 +1141,7 @@ function openSettings(){
       'Ao criar o app em developer.spotify.com, use exatamente este Redirect URI:<br><code>' + esc(SP.redirectUri()) + '</code>' }),
     el('div', { class:'field row', style:'margin-top:12px' },
       el('button', { class:'ghost-btn', onclick: openDiagnostico }, 'Diagnóstico da conexão'),
+      el('button', { class:'ghost-btn', onclick: openRegistro }, 'Registro do Spotify'),
       el('button', { class:'ghost-btn', onclick: buscarAtualizacao }, 'Buscar atualização')),
     el('div', { class:'field' },
       el('button', { class:'ghost-btn', style:'width:100%', onclick: async e => {
@@ -1110,6 +1162,10 @@ function openSettings(){
         'Comandar daqui mantém você no painel: a peça acende na hora e o app confere por trás. ' +
         'Exige o app do Spotify aberto no iPad. Parado muito tempo em segundo plano, o iPad o ' +
         'adormece, e aí a peça seguinte abre o Spotify. Abrir o app sempre funciona, ao custo de trocar de tela.')),
+    el('div', { class:'field' },
+      el('label', {}, 'Se o Spotify não começar a tocar'), seNao,
+      el('p', { class:'hint' },
+        'Ficando no painel, aparece um aviso com o botão "Abrir e tocar", e nada troca de tela sozinho.')),
     el('div', { class:'field' },
       el('label', {}, 'Ao abrir a peça no Spotify'), openApp),
 
@@ -1137,6 +1193,7 @@ function openSettings(){
       st.settings.clientId = cid.value.trim();
       st.settings.openInApp = openApp.value === 'app';
       st.settings.modoSpotify = modoSp.value;
+      st.settings.seNaoComecar = seNao.value;
       S.save(); paintSpotify(); c();
     }}]
   });
