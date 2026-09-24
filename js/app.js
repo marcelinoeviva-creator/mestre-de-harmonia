@@ -17,10 +17,8 @@ let volTimer = null;
 
 /* O último pedido feito ao Spotify. Existe porque o Spotify responde
    "recebido" antes de tocar, e a interface precisa saber o que foi pedido
-   para: acender a peça na hora, confirmar em segundo plano, e perceber
-   quando ele emenda outra música sozinho ao fim da peça. */
-let pedido = null;        // { id, trackId, titulo, confirmado, fim }
-let timerGuarda = null;
+   para acender a peça na hora e confirmar em segundo plano. */
+let pedido = null;        // { id, trackId, titulo, confirmado, incerto }
 
 /* ═══════════ Início ═══════════ */
 
@@ -212,7 +210,7 @@ function wireConsole(){
 
   $('#btnPanic').onclick = async () => {
     A.panic();
-    pedido = null; clearTimeout(timerGuarda); fecharAlerta();
+    pedido = null; fecharAlerta();
     if(SP.connected()) SP.pause(st.settings.clientId).catch(() => {});
     paintDeck('A'); paintDeck('B'); marcarLinhasAoVivo();
     toast('Tudo silenciado.');
@@ -452,9 +450,8 @@ async function playTrack(t){
 async function tocarNoSpotify(t){
   const cid = st.settings.clientId;
   fecharAlerta();
-  pedido = { id: t.spotifyId, trackId: t.id, titulo: t.title, confirmado: false, fim: 0 };
+  pedido = { id: t.spotifyId, trackId: t.id, titulo: t.title, confirmado: false };
   motivoAbertura = null;
-  clearTimeout(timerGuarda);
   $('#spTitle').textContent = t.title;
   $('#spDevice').textContent = 'iniciando…';
   marcarLinhasAoVivo();
@@ -884,31 +881,16 @@ function aplicarEstado(e){
   marcarLinhasAoVivo();
 }
 
-/* Guarda contra a "reprodução automática" do Spotify: ao fim de uma
-   faixa ele emenda músicas parecidas por conta própria. No meio de uma
-   sessão, isso seria uma música aleatória entrando no ritual.
-
-   Quando a peça pedida está tocando, agenda uma conferência para o
-   instante em que ela termina. Se ali o Spotify estiver tocando outra
-   coisa, pausa. Troca no meio da peça não é mexida: essa foi o operador. */
+/* Só marca a peça pedida como confirmada. Não pausa o Spotify ao fim
+   da peça: a revisão de 24/09 passou a pausar quando ele emendava outra
+   música, e foi isso que estragou a troca de peças. Pausado em segundo
+   plano, o iPadOS congela o Spotify em pouco tempo; congelado, ele aceita
+   o comando seguinte e não toca — o app esperava ~6 s e abria o Spotify.
+   Em 09/09 nada pausava, o Spotify seguia acordado e a troca era direta. */
 function vigiarEmenda(e){
   if(!pedido) return;
   const ehPedida = e?.item && (SP.mesmaFaixa(e.item, pedido.id) || (!!pedido.titulo && normal(e.item.name) === normal(pedido.titulo)));
-
-  if(ehPedida && e.is_playing){
-    pedido.confirmado = true;
-    const resta = (e.item.duration_ms || 0) - (e.progress_ms || 0);
-    pedido.fim = Date.now() + resta;
-    clearTimeout(timerGuarda);
-    timerGuarda = setTimeout(pollSpotify, resta + 700);
-    return;
-  }
-  if(!pedido.confirmado || !e?.is_playing || ehPedida) return;
-  if(Date.now() < pedido.fim - 4000) return;             // trocou no meio: foi o operador
-
-  SP.pause(st.settings.clientId).catch(() => {});
-  pedido = null;
-  toast('A peça terminou e o Spotify ia emendar outra música por conta própria. Pausei.');
+  if(ehPedida && e.is_playing) pedido.confirmado = true;
 }
 
 function paintSpotify(){
@@ -1126,12 +1108,8 @@ function openSettings(){
       el('label', {}, 'Como tocar as peças do Spotify'), modoSp,
       el('p', { class:'hint' },
         'Comandar daqui mantém você no painel: a peça acende na hora e o app confere por trás. ' +
-        'Exige o app do Spotify aberto no iPad — se ele fechar, a luz do topo avisa antes da ' +
-        'próxima deixa, e um toque nela o abre. Abrir o app sempre funciona, ao custo de trocar de tela.'),
-      el('p', { class:'hint', html:
-        'Recomendado: desligue a <strong>reprodução automática</strong> no Spotify ' +
-        '(Ajustes → Reprodução). O painel já pausa se ele emendar outra música ao fim da peça, ' +
-        'mas desligar evita até o primeiro segundo.' })),
+        'Exige o app do Spotify aberto no iPad. Parado muito tempo em segundo plano, o iPad o ' +
+        'adormece, e aí a peça seguinte abre o Spotify. Abrir o app sempre funciona, ao custo de trocar de tela.')),
     el('div', { class:'field' },
       el('label', {}, 'Ao abrir a peça no Spotify'), openApp),
 
