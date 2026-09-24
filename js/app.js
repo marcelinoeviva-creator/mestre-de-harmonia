@@ -21,11 +21,11 @@ let volTimer = null;
    quando ele emenda outra música sozinho ao fim da peça. */
 let pedido = null;        // { id, trackId, titulo, confirmado, fim }
 let timerGuarda = null;
-let spDormindo = false;   // o app do Spotify fechou: comandos não chegam
 
 /* ═══════════ Início ═══════════ */
 
 async function boot(){
+  if(st.settings.spDevice){ st.settings.spDevice = null; S.save(); }   // resíduo da versão de 24/09
   initModal();
   buildFaders();
   wireHeader();
@@ -147,7 +147,6 @@ function wireHeader(){
   };
   $('#searchInput').oninput = e => { searching = e.target.value; paintTracks(); };
   $('#spotifyStatus').onclick = () => {
-    if(spDormindo) return acordarSpotify();
     // Desconectado com Client ID guardado: reconectar é o que se quer,
     // e caçar o botão no fim de Ajustes é atrito à toa.
     if(!SP.connected() && st.settings.clientId){
@@ -452,43 +451,18 @@ async function tocarNoSpotify(t){
   marcarLinhasAoVivo();
 
   try{
-    await SP.playTrack(cid, t.spotifyId, alvoSpotify());
+    /* O aparelho é o que o Spotify diz estar ativo — exatamente como na
+       versão de 09/09, que funcionava. A revisão de 24/09 passou a
+       guardar um aparelho e a escolher outro da lista quando não o
+       achava; o Spotify do Mac entra nessa lista, e as músicas foram
+       parar lá. Não se escolhe aparelho por conta própria. */
+    await SP.playTrack(cid, t.spotifyId, spDeviceId || undefined);
   }catch(e){
-    if(e.code === 'NO_DEVICE' && await acordarPorRede(t)) return conferirInicio(t);
     pedido = null; marcarLinhasAoVivo(); paintSpotify();
-    if(e.code === 'NO_DEVICE') return avisarSpotifyFechado(t);
+    if(e.code === 'NO_DEVICE') return abrirNoSpotify(t, 'O Spotify estava adormecido. Abrindo para tocar…');
     return toast(e.message, true);
   }
   conferirInicio(t);
-}
-
-/** Para onde mandar: o aparelho escolhido em Saída; senão, o ativo. */
-function alvoSpotify(){
-  return st.settings.spDevice?.id || spState?.device?.id || undefined;
-}
-
-function lembrarAparelho(dev){
-  if(!dev?.id) return;
-  if(st.settings.spDevice?.id === dev.id) return;
-  st.settings.spDevice = { id: dev.id, name: dev.name };
-  S.save();
-}
-
-/** O aparelho-alvo não está ativo: tenta pela lista, sem sair do painel. */
-async function acordarPorRede(t){
-  const cid = st.settings.clientId;
-  try{
-    const lista = (await SP.devices(cid))?.devices || [];
-    if(!lista.length) return false;
-    const salvo = st.settings.spDevice;
-    const dev = lista.find(d => d.id === salvo?.id)
-             || lista.find(d => salvo?.name && d.name === salvo.name)
-             || lista.find(d => d.is_active)
-             || lista[0];
-    await SP.playTrack(cid, t.spotifyId, dev.id);
-    lembrarAparelho(dev);
-    return true;
-  }catch(e){ return false; }
 }
 
 /** Confere por trás. A peça já está acesa; aqui só se descobre se deu
@@ -503,7 +477,6 @@ function conferirInicio(t){
     if(e) aplicarEstado(e);
     if(e?.is_playing && SP.mesmaFaixa(e.item, t.spotifyId)){
       pedido.confirmado = true;
-      lembrarAparelho(e.device);
       marcarLinhasAoVivo();
       return;
     }
@@ -513,30 +486,24 @@ function conferirInicio(t){
   setTimeout(() => tentar(0), esperas[0]);
 }
 
-/* O iPadOS congela o Spotify parado em segundo plano, e congelado ele
-   não recebe comando nenhum. Nesse caso a única forma de a música tocar
-   é abrir o Spotify — e é o que o app sempre fez, até a revisão que
-   trocou isso por um aviso e deixou a deixa em silêncio. Voltou.
-   Exceção: com deck no ar, abrir o Spotify silenciaria a mesa. */
-function avisarSpotifyFechado(t){
+/* Quando o comando não pega — o iPadOS congelou o Spotify parado em
+   segundo plano, ou ele não começou —, abrir a faixa no Spotify é o que
+   faz a música tocar. É o que o app fazia em 09/09. Exceção: com deck
+   no ar, abrir o Spotify silenciaria a mesa; aí só avisa. */
+function abrirNoSpotify(t, msg){
   if(A.isPlaying('A') || A.isPlaying('B')){
-    alerta('O Spotify está adormecido no iPad. Abrir o Spotify agora pararia os decks A/B.', [
+    alerta('O Spotify não respondeu. Abrir o Spotify agora pararia os decks A/B.', [
       { label:'Abrir e tocar', primaria:true, onClick: () => SP.openExternally('track', t.spotifyId, st.settings.openInApp) }
     ]);
     return;
   }
-  toast('O Spotify estava adormecido. Abrindo para tocar…');
+  toast(msg);
   SP.openExternally('track', t.spotifyId, st.settings.openInApp);
 }
 
-function avisarNaoComecou(t, e){
+function avisarNaoComecou(t){
   pedido = null; marcarLinhasAoVivo(); paintSpotify();
-  const onde = e?.device?.name ? ` em "${e.device.name}"` : '';
-  const decks = (A.isPlaying('A') || A.isPlaying('B')) ? ' Abrir o Spotify vai pausar os decks A/B.' : '';
-  alerta(`O Spotify recebeu, mas não começou a tocar${onde}. O app dele pode ter adormecido.${decks}`, [
-    { label:'Abrir e tocar', primaria:true, onClick: () => SP.openExternally('track', t.spotifyId, st.settings.openInApp) },
-    { label:'Tentar de novo', onClick: () => tocarNoSpotify(t) }
-  ]);
+  abrirNoSpotify(t, 'O Spotify não começou a tocar. Abrindo no app…');
 }
 
 async function cue(t, deckId, autoplay = false){
@@ -807,17 +774,15 @@ async function initSpotify(){
   if(SP.connected()){
     await checkSpotify();
     pollSpotify();
-    vigiarAparelho();
   }
   // Os intervalos ficam de pé mesmo desconectado: se a conexão vier
   // depois, a vigilância já está rodando.
   setInterval(() => { if(!document.hidden) pollSpotify(); }, 5000);
-  setInterval(() => { if(!document.hidden) vigiarAparelho(); }, 20000);
   // Voltar ao painel (vindo do Spotify, por exemplo) é o momento em que o
   // estado mais provavelmente mudou: confere na hora.
   document.addEventListener('visibilitychange', () => {
     if(document.hidden) return;
-    pollSpotify(); vigiarAparelho();
+    pollSpotify();
   });
 }
 
@@ -870,7 +835,6 @@ function aplicarEstado(e){
   };
   if(e?.device){
     spDeviceId = e.device.id;
-    if(spDormindo && e.device.id === alvoSpotify()){ spDormindo = false; }
     const v = e.device.volume_percent;
     if(typeof v === 'number' && Math.abs(v - st.settings.volumes.S) > 2) faders.S?.set(v/100, true);
   }
@@ -906,40 +870,12 @@ function vigiarEmenda(e){
   toast('A peça terminou e o Spotify ia emendar outra música por conta própria. Pausei.');
 }
 
-/* O app do Spotify, fechado ou adormecido pelo iPadOS, some da lista de
-   aparelhos, e aí nenhum comando chega. Descobrir isso só na hora da
-   deixa é tarde: esta vigilância percebe antes e acende o aviso no canal
-   S, para o operador acordá-lo num momento tranquilo. */
-async function vigiarAparelho(){
-  if(!spCanControl() || st.settings.modoSpotify === 'link'){
-    if(spDormindo){ spDormindo = false; paintSpotify(); }
-    return;
-  }
-  try{
-    const lista = (await SP.devices(st.settings.clientId))?.devices || [];
-    const salvo = st.settings.spDevice;
-    let achou = lista.find(d => d.id === salvo?.id);
-    if(!achou && salvo?.name){                          // o Spotify às vezes troca o id
-      achou = lista.find(d => d.name === salvo.name);
-      if(achou) lembrarAparelho(achou);
-    }
-    spDormindo = salvo ? !achou : lista.length === 0;
-  }catch(e){ /* sem rede: não conclui nada */ }
-  paintSpotify();
-}
-
-function acordarSpotify(){
-  SP.abrirApp();
-  toast('Abrindo o Spotify. Volte ao painel quando ele abrir.');
-}
-
 function paintSpotify(){
   const chip = $('#spotifyStatus'), label = $('.chip-label', chip);
   const deck = $('#spDeck');
   // Verde só quando a API respondeu de verdade (spProfile preenchido).
   const logged = SP.connected();
   const working = logged && !spFault && !!spProfile;
-  deck.classList.toggle('dormindo', working && spDormindo);
 
   let label_, cls;
   if(!logged){                 // sem token: nunca é "verificando"
@@ -969,14 +905,6 @@ function paintSpotify(){
     $('#spToggle').classList.remove('on');
     return;
   }
-  if(spDormindo){
-    chip.className = 'chip chip-warn';
-    label.textContent = 'Spotify adormecido';
-    $('#spTitle').textContent = 'O iPad pôs o Spotify para dormir';
-    $('#spDevice').textContent = 'a próxima peça vai abrir o Spotify';
-    $('#spToggle').classList.remove('on');
-    return;
-  }
 
   // O Spotify no iPad não aceita volume por comando remoto: o fader
   // fica desligado para não fingir que controla alguma coisa.
@@ -987,7 +915,7 @@ function paintSpotify(){
   else if(!pedido) $('#spTitle').textContent = 'Nada tocando';
   $('#spDevice').textContent = spState?.device
     ? spState.device.name + (spState.device.supports_volume === false ? ' · volume no aparelho' : '')
-    : (st.settings.spDevice?.name ? st.settings.spDevice.name + ' · pronto' : 'sem aparelho ativo');
+    : 'sem aparelho ativo';
   $('#spToggle').textContent = spState?.is_playing ? '❚❚' : '▶';
   $('#spToggle').classList.toggle('on', !!spState?.is_playing);
 }
@@ -1008,16 +936,12 @@ async function openDevices(){
       box.append(el('button', { class:'dev-item' + (dev.is_active ? ' on' : ''), onclick: async () => {
         try{
           await SP.transferTo(st.settings.clientId, dev.id, false);
-          spDeviceId = dev.id;
-          st.settings.spDevice = { id: dev.id, name: dev.name }; S.save();
-          spDormindo = false;
-          toast('Saída: ' + dev.name + ' — fica guardada para as próximas peças.');
+          spDeviceId = dev.id; toast('Saída: ' + dev.name);
           setTimeout(pollSpotify, 600); closeModal();
         }catch(e){ toast(e.message, true); }
       }},
         el('span', { class:'grow' }, dev.name),
         el('span', { class:'badge' }, dev.type),
-        st.settings.spDevice?.id === dev.id ? el('span', { class:'badge local' }, 'escolhido') : null,
         dev.is_active ? el('span', { class:'badge sp' }, 'ativo') : null
       ));
     }
