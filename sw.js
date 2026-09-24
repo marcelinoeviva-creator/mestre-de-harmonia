@@ -15,7 +15,7 @@
    - css/js/imagens saem do cache na hora e se atualizam por trás.
    ============================================================ */
 
-const VERSION = '2026-08-17-j';
+const VERSION = '2026-09-24-a';
 const CACHE = 'mh-' + VERSION;
 
 /* Pasta onde o app vive, deduzida da posição deste arquivo. */
@@ -30,6 +30,7 @@ const SHELL = [
   './js/audio.js',
   './js/spotify.js',
   './js/ui.js',
+  './js/deixas.js',
   './manifest.webmanifest',
   './icons/logo.png',
   './icons/icon-192.png',

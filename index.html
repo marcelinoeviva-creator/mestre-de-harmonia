@@ -75,6 +75,20 @@
   </section>
 </main>
 
+<!-- ═══════════ DEIXAS ═══════════
+     A sessão inteira com um botão: a próxima peça do roteiro, na ordem.
+     Também responde ao teclado e a pedais Bluetooth (→ / PageDown). -->
+<div class="deixas" id="deixas">
+  <button class="dx-nav" id="dxVoltar" title="Voltar uma peça (← ou PageUp)">◀</button>
+  <div class="dx-info">
+    <small id="dxRotulo">PRÓXIMA</small>
+    <strong id="dxTitulo">—</strong>
+    <span id="dxDepois"></span>
+  </div>
+  <button class="dx-nav" id="dxPular" title="Pular esta peça sem tocar">▶▶</button>
+  <button class="dx-go" id="dxGo" title="Tocar a próxima peça (→, espaço ou pedal)">TOCAR ▶</button>
+</div>
+
 <!-- ═══════════ MESA DE SOM ═══════════ -->
 <footer class="console" id="console">
   <button id="btnConsoleToggle" class="console-grip" title="Recolher/expandir a mesa"></button>
@@ -171,8 +185,8 @@
         <div class="deck-controls">
           <button class="deck-btn play" id="spToggle">▶</button>
           <div class="btn-row">
-            <button class="deck-btn" id="spPrev" title="Anterior">⏮</button>
-            <button class="deck-btn" id="spNext" title="Próxima">⏭</button>
+            <button class="deck-btn" id="spPrev" title="Recomeçar a faixa">⏮</button>
+            <button class="deck-btn" id="spNext" title="Próxima peça do roteiro">⏭</button>
             <button class="deck-btn" id="spDevices" title="Escolher aparelho de saída">Saída</button>
           </div>
         </div>
@@ -197,6 +211,7 @@
 </div>
 
 <div id="toast" class="toast hidden"></div>
+<div id="alerta" class="alerta hidden" role="alert"></div>
 
 <!-- O iPadOS decide o que fica selecionável pelo accept. Só "audio/*"
      deixa muito MP3 apagado, então vão também as extensões explícitas.

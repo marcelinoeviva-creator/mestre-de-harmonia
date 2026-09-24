@@ -168,9 +168,33 @@ export function logout(){
 
 export const connected = () => !!auth.refresh || (!!auth.token && Date.now() < auth.expires);
 
+/* Renovação da sessão.
+
+   O Spotify troca o refresh token a cada renovação e invalida o anterior.
+   Duas renovações simultâneas — a sondagem de 5 em 5 segundos e um toque
+   em ▶ no mesmo instante — faziam a segunda usar uma chave já morta, e o
+   app se desconectava sozinho. Agora há uma renovação por vez, e quem
+   chega depois espera a que está em andamento.
+
+   Também renova com quatro minutos de folga, para não pagar a ida à rede
+   no instante em que o operador aperta ▶, e só descarta a sessão quando
+   o Spotify diz que ela é inválida — oscilação de rede não desconecta. */
+let renovando = null;
+
 async function ensureToken(clientId){
-  if(auth.token && Date.now() < auth.expires) return auth.token;
+  if(auth.token && Date.now() < auth.expires - 240000) return auth.token;
   if(!auth.refresh) throw new Error('Não conectado ao Spotify.');
+  if(!renovando) renovando = renovar(clientId).finally(() => { renovando = null; });
+  try{
+    return await renovando;
+  }catch(e){
+    // A renovação falhou, mas o token atual ainda vale: segue com ele.
+    if(auth.token && Date.now() < auth.expires) return auth.token;
+    throw e;
+  }
+}
+
+async function renovar(clientId){
   const r = await fetch(TOKEN, {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -178,7 +202,13 @@ async function ensureToken(clientId){
   });
   const { data: j, text, notJson } = await readBody(r);
   if(notJson) throw notJsonError(r, text);          // rede no caminho: não descarta a sessão
-  if(!r.ok){ logout(); throw new Error('Sessão do Spotify expirou. Conecte novamente.' + raw(r.status, j?.error_description, j?.error)); }
+  if(!r.ok){
+    if(r.status === 400 || r.status === 401){
+      logout();
+      throw new Error('Sessão do Spotify expirou. Conecte novamente.' + raw(r.status, j?.error_description, j?.error));
+    }
+    throw new Error(`O Spotify não renovou a sessão agora (${r.status}). Tente de novo em instantes.`);
+  }
   store(j);
   return auth.token;
 }
@@ -284,7 +314,27 @@ async function call(clientId, path, { method = 'GET', body, query } = {}){
     o token vale e a API responde de verdade. */
 export const me = cid => call(cid, '/me');
 
-export const playbackState = cid => call(cid, '/me/player');
+/* market=from_token faz o Spotify contar, em linked_from, quando trocou a
+   faixa pedida pela versão do país da conta. Sem isso não há como saber
+   que a música que toca é a que foi pedida. */
+export const playbackState = cid => call(cid, '/me/player', { query: { market: 'from_token' } });
+
+/** A faixa tocando é a que foi pedida? Considera a troca de versão
+    regional, que muda o código da faixa sem mudar a música. */
+export function mesmaFaixa(item, trackId){
+  if(!item || !trackId) return false;
+  return item.id === trackId || item.linked_from?.id === trackId || item.uri === uri('track', trackId);
+}
+
+/** Traz o app do Spotify para a frente, sem tocar nada — para acordá-lo. */
+export function abrirApp(){
+  const a = document.createElement('a');
+  a.href = 'spotify://';
+  a.rel = 'noreferrer';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+}
 export const devices       = cid => call(cid, '/me/player/devices');
 
 export const transferTo = (cid, deviceId, play = false) =>

@@ -37,6 +37,34 @@ export function toast(msg, isError = false){
   toastTimer = setTimeout(() => t.classList.add('hidden'), isError ? 5200 : 2600);
 }
 
+/* ── Aviso com ação ───────────────────────────
+   Para quando algo deu errado e há o que fazer. Não toma a tela nem
+   troca de aplicativo sozinho: oferece o botão e espera o operador.
+   ─────────────────────────────────────────── */
+
+let alertaTimer = null;
+export function fecharAlerta(){
+  clearTimeout(alertaTimer);
+  $('#alerta')?.classList.add('hidden');
+}
+
+/** acoes: [{ label, primaria, onClick }] */
+export function alerta(msg, acoes = [], ms = 15000){
+  const a = $('#alerta');
+  a.innerHTML = '';
+  a.append(
+    el('span', { class:'al-msg' }, msg),
+    ...acoes.map(x => el('button', {
+      class: 'al-btn' + (x.primaria ? ' pri' : ''),
+      onclick: () => { fecharAlerta(); x.onClick?.(); }
+    }, x.label)),
+    el('button', { class:'al-x', title:'Fechar', onclick: fecharAlerta }, '✕')
+  );
+  a.classList.remove('hidden');
+  clearTimeout(alertaTimer);
+  alertaTimer = setTimeout(fecharAlerta, ms);
+}
+
 /* ── Diálogo ──────────────────────────────── */
 
 let onCloseHook = null;

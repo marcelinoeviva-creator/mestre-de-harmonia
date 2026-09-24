@@ -35,6 +35,8 @@ function freshState(){
       // 'connect' comanda por rede sem sair do painel (exige o app do
       // Spotify rodando no aparelho); 'link' sempre abre o Spotify.
       modoSpotify: 'connect',
+      spDevice: null,       // { id, name } — saída escolhida, lembrada entre sessões
+      proximaId: '',        // ponteiro da lista de deixas (id da próxima peça)
       fadeSeconds: 5,
       volumes: { A: 80, B: 80, M: 90, S: 70 }
     },
