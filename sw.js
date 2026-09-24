@@ -15,7 +15,7 @@
    - css/js/imagens saem do cache na hora e se atualizam por trás.
    ============================================================ */
 
-const VERSION = '2026-09-24-a';
+const VERSION = '2026-09-24-b';
 const CACHE = 'mh-' + VERSION;
 
 /* Pasta onde o app vive, deduzida da posição deste arquivo. */
