@@ -95,6 +95,7 @@ function makeDeck(id){
 
   const src = ctx.createMediaElementSource(el);
   src.connect(gain);
+  el.addEventListener('ended', () => liberarSeCalado());   // terminou sozinho: devolve o áudio
 
   return {
     id, el, gain,

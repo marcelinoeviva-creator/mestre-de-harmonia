@@ -30,6 +30,7 @@
   --sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
 
   --console-h: 268px;
+  --deixas-h: 58px;
   --safe-b: env(safe-area-inset-bottom, 0px);
 }
 
@@ -179,6 +180,12 @@ h1,h2,h3{ margin:0; font-family:var(--serif); font-weight:600; letter-spacing:.0
   border:1px solid var(--line); border-radius:var(--r-md);
 }
 .track-row.playing{ border-color:var(--gold); box-shadow:0 0 0 1px #d4af3744, 0 0 22px #d4af3722; }
+/* Pedido enviado, ainda sem confirmação: resposta imediata ao toque,
+   sem esperar a rede. */
+.track-row.pending{ border-color:var(--gold-dim); animation:pulso 1.1s ease-in-out infinite; }
+@keyframes pulso{ 50%{ box-shadow:0 0 0 1px #d4af3755, 0 0 18px #d4af3733; } }
+/* A próxima da lista de deixas, marcada no roteiro. */
+.track-row.proxima{ box-shadow:inset 3px 0 0 var(--gold); }
 .track-art{
   width:48px; height:48px; flex:0 0 auto; border-radius:6px; object-fit:cover;
   background:#0a1120 center/cover no-repeat; border:1px solid var(--line);
@@ -212,6 +219,51 @@ h1,h2,h3{ margin:0; font-family:var(--serif); font-weight:600; letter-spacing:.0
   display:block; width:150px; margin:0 auto 20px;
   opacity:.13; filter:invert(1) grayscale(1) contrast(.7);
 }
+
+/* ─────────────── Deixas ───────────────
+   Uma faixa entre o roteiro e a mesa. O botão de tocar é o maior da
+   tela depois do SILÊNCIO: é o que se aperta a cada deixa do ritual.
+   ─────────────────────────────────────── */
+.deixas{
+  flex:0 0 auto; height:var(--deixas-h);
+  display:flex; align-items:center; gap:10px; padding:0 14px;
+  background:linear-gradient(180deg,#0f1729,#0c1322);
+  border-top:1px solid var(--line);
+}
+.dx-nav{
+  flex:0 0 auto; width:46px; height:40px; border-radius:9px; font-size:14px;
+  background:var(--panel); border:1px solid var(--line); color:var(--muted);
+}
+.dx-nav:active{ background:var(--panel-2); }
+.dx-info{ flex:1 1 auto; min-width:0; display:flex; align-items:baseline; gap:12px; overflow:hidden; }
+.dx-info small{ flex:0 0 auto; font-size:11px; letter-spacing:.12em; color:var(--gold); font-weight:600; }
+.dx-info strong{ flex:0 1 auto; min-width:0; font-size:16.5px; font-weight:600; color:var(--text);
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.dx-info span{ flex:0 1 auto; min-width:0; font-size:12.5px; color:var(--muted);
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.dx-go{
+  flex:0 0 auto; min-width:150px; height:44px; padding:0 20px; border-radius:10px;
+  font-size:16px; font-weight:700; letter-spacing:.04em;
+  background:linear-gradient(180deg,#d9b845,#a8842a); border:1px solid #e8cf7a; color:#1a1305;
+}
+.dx-go:active{ filter:brightness(.88); }
+.dx-go:disabled, .dx-nav:disabled{ opacity:.35; }
+
+/* ─────────────── Aviso com ação ─────────────── */
+.alerta{
+  position:fixed; left:50%; transform:translateX(-50%); z-index:85;
+  bottom:calc(var(--console-h) + var(--deixas-h) + 16px);
+  width:min(760px, 94vw); display:flex; align-items:center; gap:10px;
+  padding:12px 12px 12px 18px; border-radius:14px;
+  background:#2b2210f2; border:1px solid #8a7228; box-shadow:0 12px 40px #000c;
+}
+.al-msg{ flex:1 1 auto; font-size:14.5px; line-height:1.4; color:#f7ecc8; }
+.al-btn{
+  flex:0 0 auto; height:40px; padding:0 14px; border-radius:9px; font-size:14px; font-weight:600;
+  background:#1b2033; border:1px solid var(--line-hi); color:var(--text);
+}
+.al-btn.pri{ background:linear-gradient(180deg,#d9b845,#a8842a); border-color:#e8cf7a; color:#1a1305; }
+.al-x{ flex:0 0 auto; width:34px; height:34px; border-radius:8px; background:none; border:none; color:#c9b98a; font-size:16px; }
 
 /* ─────────────── Mesa de som ─────────────── */
 .console{
@@ -249,6 +301,8 @@ h1,h2,h3{ margin:0; font-family:var(--serif); font-weight:600; letter-spacing:.0
 .deck.live{ border-color:var(--gold); box-shadow:inset 0 0 0 1px #d4af3733; }
 .deck.spotify-deck{ background:linear-gradient(180deg,#0f2a1c,#0c1a16); border-color:#1db95433; }
 .deck.spotify-deck.off{ opacity:.55; }
+.deck.spotify-deck.dormindo{ border-color:#e0a53f88; box-shadow:inset 0 0 0 1px #e0a53f44; }
+.deck.spotify-deck.dormindo .deck-time{ color:#f0c878; }
 
 .deck-head{ display:flex; align-items:center; gap:10px; min-width:0; }
 .deck-tag{
@@ -410,7 +464,7 @@ h1,h2,h3{ margin:0; font-family:var(--serif); font-weight:600; letter-spacing:.0
 
 /* ─────────────── Aviso flutuante ─────────────── */
 .toast{
-  position:fixed; left:50%; bottom:calc(var(--console-h) + 22px); transform:translateX(-50%);
+  position:fixed; left:50%; bottom:calc(var(--console-h) + var(--deixas-h) + 18px); transform:translateX(-50%);
   z-index:80; max-width:78vw; padding:12px 20px; border-radius:999px;
   background:#1b2540ee; border:1px solid var(--line-hi); color:var(--text);
   font-size:14.5px; box-shadow:0 10px 34px #000a; text-align:center;
@@ -446,7 +500,12 @@ h1,h2,h3{ margin:0; font-family:var(--serif); font-weight:600; letter-spacing:.0
    com cada canal no tamanho em que ainda se opera com o dedo.
    ─────────────────────────────────────────── */
 @media (max-width: 700px){
-  :root{ --console-h: 296px; }
+  :root{ --console-h: 296px; --deixas-h: 54px; }
+  .deixas{ gap:6px; padding:0 8px; }
+  .dx-nav{ width:38px; }
+  .dx-info{ flex-direction:column; align-items:flex-start; gap:0; }
+  .dx-info span{ display:none; }
+  .dx-go{ min-width:0; padding:0 14px; font-size:14px; }
 
   .topbar{ height:58px; padding:0 10px; gap:8px; }
   .brand-mark{ width:38px; height:38px; }

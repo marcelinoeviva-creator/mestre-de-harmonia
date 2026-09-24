@@ -5,7 +5,8 @@
 import * as S from './store.js';
 import * as A from './audio.js';
 import * as SP from './spotify.js';
-import { $, $$, el, mmss, toast, modal, closeModal, initModal, field, input, makeFader } from './ui.js';
+import * as D from './deixas.js';
+import { $, $$, el, mmss, toast, alerta, fecharAlerta, modal, closeModal, initModal, field, input, makeFader } from './ui.js';
 
 const st = S.state;
 const faders = {};
@@ -13,6 +14,14 @@ let searching = '';
 let spState = null;          // último estado de reprodução do Spotify
 let spDeviceId = null;
 let volTimer = null;
+
+/* O último pedido feito ao Spotify. Existe porque o Spotify responde
+   "recebido" antes de tocar, e a interface precisa saber o que foi pedido
+   para: acender a peça na hora, confirmar em segundo plano, e perceber
+   quando ele emenda outra música sozinho ao fim da peça. */
+let pedido = null;        // { id, trackId, titulo, confirmado, fim }
+let timerGuarda = null;
+let spDormindo = false;   // o app do Spotify fechou: comandos não chegam
 
 /* ═══════════ Início ═══════════ */
 
@@ -22,13 +31,20 @@ async function boot(){
   wireHeader();
   wireConsole();
   wireLists();
+  wireDeixas();
   renderAll();
 
   document.addEventListener('pointerdown', () => { A.unlock(); S.persistir(); }, { once: true });
   S.persistir();
 
-  A.onEnded(id => { paintDeck(id); paintTracks(); });
+  A.onEnded(id => { paintDeck(id); marcarLinhasAoVivo(); });
   setInterval(tick, 250);
+
+  // O iPadOS solta a trava de tela acesa quando o app sai de cena (ao
+  // abrir o Spotify, por exemplo). Ao voltar, o tick precisa pedir de novo.
+  document.addEventListener('visibilitychange', () => {
+    if(!document.hidden) tick.acordado = null;
+  });
 
   await initSpotify();
   registerSW();
@@ -131,6 +147,7 @@ function wireHeader(){
   };
   $('#searchInput').oninput = e => { searching = e.target.value; paintTracks(); };
   $('#spotifyStatus').onclick = () => {
+    if(spDormindo) return acordarSpotify();
     // Desconectado com Client ID guardado: reconectar é o que se quer,
     // e caçar o botão no fim de Ajustes é atrito à toa.
     if(!SP.connected() && st.settings.clientId){
@@ -165,7 +182,7 @@ function wireConsole(){
       else if(act === 'fadein')  await A.fadeIn(id, secs);
       else if(act === 'fadeout') A.fadeOut(id, secs);
       else if(act === 'eject')   A.eject(id);
-      paintDeck(id); paintTracks();
+      paintDeck(id); marcarLinhasAoVivo();
     };
   });
 
@@ -191,19 +208,20 @@ function wireConsole(){
     if(!A.isLoaded('A') && !A.isLoaded('B')) return toast('Carregue peças nos decks A e B primeiro.');
     const { from, to } = await A.crossfade(st.settings.fadeSeconds);
     toast(from ? `Transição ${from} → ${to} em ${st.settings.fadeSeconds}s` : `Entrando com ${to}`);
-    paintDeck('A'); paintDeck('B'); paintTracks();
+    paintDeck('A'); paintDeck('B'); marcarLinhasAoVivo();
   };
 
   $('#btnPanic').onclick = async () => {
     A.panic();
+    pedido = null; clearTimeout(timerGuarda); fecharAlerta();
     if(SP.connected()) SP.pause(st.settings.clientId).catch(() => {});
-    paintDeck('A'); paintDeck('B'); paintTracks();
+    paintDeck('A'); paintDeck('B'); marcarLinhasAoVivo();
     toast('Tudo silenciado.');
   };
 
   $('#spToggle').onclick = () => spCommand(spState?.is_playing ? 'pause' : 'resume');
-  $('#spNext').onclick   = () => spCommand('next');
-  $('#spPrev').onclick   = () => spCommand('prev');
+  $('#spNext').onclick   = () => irDeixa();
+  $('#spPrev').onclick   = () => spCommand('recomecar');
   $('#spDevices').onclick = openDevices;
 
   const spScrub = $('#spScrub');
@@ -217,7 +235,7 @@ function wireConsole(){
     try{
       await SP.seek(st.settings.clientId, destino);
       spPos = { ...spPos, ms: destino, at: Date.now() };
-      setTimeout(pollSpotify, 400);
+      setTimeout(pollSpotify, 400);             // reposiciona também a guarda de fim de peça
     }catch(e){ toast(e.message, true); }
   });
 }
@@ -228,8 +246,7 @@ async function spCommand(kind){
   try{
     if(kind === 'pause')  await SP.pause(cid);
     if(kind === 'resume') await SP.resume(cid);
-    if(kind === 'next')   await SP.next(cid);
-    if(kind === 'prev')   await SP.prev(cid);
+    if(kind === 'recomecar') await SP.seek(cid, 0);
     setTimeout(pollSpotify, 350);
   }catch(e){ toast(e.message, true); }
 }
@@ -272,6 +289,7 @@ function paintMoments(){
       )
     ));
   }
+  pintarDeixas();          // o nome do momento aparece na barra de deixas
 }
 
 function openOrganize(){
@@ -331,13 +349,35 @@ function paintTracks(){
   $('#btnAddTrack').disabled = !!searching.trim();
 
   rows.forEach((t, i) => list.append(trackRow(t, m, i, rows.length)));
+  marcarLinhasAoVivo();
+}
+
+/* Acende o que está tocando e marca a próxima, sem reconstruir a lista.
+   Reconstruir a cada sondagem trocava os botões debaixo do dedo do
+   operador, e o toque se perdia. */
+function marcarLinhasAoVivo(){
+  const noAr = new Set();
+  for(const id of ['A','B'])
+    if(A.isPlaying(id) && A.decks[id]?.trackId) noAr.add(A.decks[id].trackId);
+
+  let iniciando = null;
+  if(spState?.is_playing && spState.item){
+    for(const t of Object.values(st.tracks))
+      if(t.spotifyId && SP.mesmaFaixa(spState.item, t.spotifyId)) noAr.add(t.id);
+  }
+  if(pedido && !noAr.has(pedido.trackId) && !pedido.confirmado) iniciando = pedido.trackId;
+
+  const proxima = proximaDeixa()?.t.id;
+  for(const r of $$('#trackList .track-row')){
+    const id = r.dataset.id;
+    r.classList.toggle('playing', noAr.has(id));
+    r.classList.toggle('pending', id === iniciando);
+    r.classList.toggle('proxima', id === proxima && !noAr.has(id));
+  }
+  pintarDeixas();
 }
 
 function trackRow(t, moment, i, total){
-  const live = (A.decks.A?.trackId === t.id && A.isPlaying('A')) ||
-               (A.decks.B?.trackId === t.id && A.isPlaying('B')) ||
-               (spState?.item?.id && spState.item.id === t.spotifyId && spState.is_playing);
-
   const art = el('div', { class:'track-art' });
   if(t.artwork) art.style.backgroundImage = `url(${t.artwork})`;
 
@@ -366,7 +406,7 @@ function trackRow(t, moment, i, total){
   }
 
   return el('li', {},
-    el('div', { class:'track-row' + (live ? ' playing' : '') },
+    el('div', { class:'track-row', 'data-id': t.id },
       art,
       el('div', { class:'track-info' }, el('div', { class:'track-title' }, t.title), meta),
       actions
@@ -374,64 +414,120 @@ function trackRow(t, moment, i, total){
   );
 }
 
-/* O Spotify aceita o comando e responde sucesso mesmo quando nada
-   começa a tocar — som mudo, aparelho errado, faixa indisponível na
-   região. Anunciar "tocando" sem conferir é mentir para o operador no
-   meio da sessão. */
-async function confirmarReproducao(trackId){
-  for(let i = 0; i < 4; i++){
-    await new Promise(r => setTimeout(r, 700));
-    try{
-      const e = await SP.playbackState(st.settings.clientId);
-      if(e?.is_playing && e?.item?.id === trackId)
-        return { ok: true, aparelho: e.device?.name || '' };
-      if(i === 3) return { ok: false, aparelho: e?.device?.name || '', tocando: !!e?.is_playing };
-    }catch(err){ if(i === 3) return { ok: false, aparelho: '', erro: err.message }; }
-  }
-  return { ok: false, aparelho: '' };
-}
+/* ═══════════ Tocar ═══════════
+
+   Histórico que explica o desenho:
+   - a versão anterior esperava até 2,8 s conferindo antes de reagir, e
+     o operador ficava sem retorno no meio da deixa;
+   - a conferência comparava o código da faixa pedida com o da tocando,
+     mas o Spotify troca o código pela versão do país da conta — a música
+     tocava, a comparação falhava, e o app abria o Spotify à toa;
+   - abrir o Spotify sozinho tirava o operador do painel na hora errada.
+
+   Agora: a peça acende no instante do toque, a conferência corre por
+   trás, e o app nunca troca de tela sozinho — se algo falha, oferece o
+   botão e o operador decide. */
 
 async function playTrack(t){
-  if(spCanControl() && t.spotifyId && st.settings.modoSpotify !== 'link'){
-    try{
-      await SP.playTrack(st.settings.clientId, t.spotifyId, spDeviceId || undefined);
-      toast('Enviando ao Spotify…');
-      const r = await confirmarReproducao(t.spotifyId);
-      pollSpotify();
-      if(r.ok){
-        toast(r.aparelho ? `Tocando em ${r.aparelho}` : 'Tocando: ' + t.title);
-        return;
-      }
+  avancarDeixa(t);
 
-      /* Não começou. O comando por rede depende do app do Spotify estar
-         rodando; abrir a faixa nele sempre funciona. Cair para esse
-         caminho serve melhor que um aviso vermelho no meio da sessão —
-         a não ser que um deck esteja no ar, porque sair do app faria o
-         iPadOS silenciar a mesa. */
-      const mesaNoAr = A.isPlaying('A') || A.isPlaying('B');
-      if(mesaNoAr){
-        toast(`O Spotify não começou a tocar (saída em "${r.aparelho || 'desconhecida'}"). ` +
-              'Não abri o Spotify porque isso pararia os decks A/B.', true);
-        return;
-      }
-      toast('O Spotify não respondeu ao comando. Abrindo no app…');
-      SP.openExternally('track', t.spotifyId, st.settings.openInApp);
-      return;
-    }catch(e){
-      if(e.code === 'NO_DEVICE'){
-        toast(e.message, true);
-        SP.openExternally('track', t.spotifyId, st.settings.openInApp);
-        return;
-      }
-      toast(e.message, true);
-    }
-  }
+  if(t.spotifyId && st.settings.modoSpotify !== 'link' && spCanControl())
+    return tocarNoSpotify(t);
+
   if(t.spotifyId){
     SP.openExternally('track', t.spotifyId, st.settings.openInApp);
     return;
   }
   if(t.fileKey){ await cue(t, A.isPlaying('A') ? 'B' : 'A', true); return; }
   toast('Esta peça não tem link do Spotify nem arquivo.', true);
+}
+
+async function tocarNoSpotify(t){
+  const cid = st.settings.clientId;
+  fecharAlerta();
+  pedido = { id: t.spotifyId, trackId: t.id, titulo: t.title, confirmado: false, fim: 0 };
+  clearTimeout(timerGuarda);
+  $('#spTitle').textContent = t.title;
+  $('#spDevice').textContent = 'iniciando…';
+  marcarLinhasAoVivo();
+
+  try{
+    await SP.playTrack(cid, t.spotifyId, alvoSpotify());
+  }catch(e){
+    if(e.code === 'NO_DEVICE' && await acordarPorRede(t)) return conferirInicio(t);
+    pedido = null; marcarLinhasAoVivo(); paintSpotify();
+    if(e.code === 'NO_DEVICE') return avisarSpotifyFechado(t);
+    return toast(e.message, true);
+  }
+  conferirInicio(t);
+}
+
+/** Para onde mandar: o aparelho escolhido em Saída; senão, o ativo. */
+function alvoSpotify(){
+  return st.settings.spDevice?.id || spState?.device?.id || undefined;
+}
+
+function lembrarAparelho(dev){
+  if(!dev?.id) return;
+  if(st.settings.spDevice?.id === dev.id) return;
+  st.settings.spDevice = { id: dev.id, name: dev.name };
+  S.save();
+}
+
+/** O aparelho-alvo não está ativo: tenta pela lista, sem sair do painel. */
+async function acordarPorRede(t){
+  const cid = st.settings.clientId;
+  try{
+    const lista = (await SP.devices(cid))?.devices || [];
+    if(!lista.length) return false;
+    const salvo = st.settings.spDevice;
+    const dev = lista.find(d => d.id === salvo?.id)
+             || lista.find(d => salvo?.name && d.name === salvo.name)
+             || lista.find(d => d.is_active)
+             || lista[0];
+    await SP.playTrack(cid, t.spotifyId, dev.id);
+    lembrarAparelho(dev);
+    return true;
+  }catch(e){ return false; }
+}
+
+/** Confere por trás. A peça já está acesa; aqui só se descobre se deu
+    certo. Silencioso no sucesso, que é o caso comum. */
+function conferirInicio(t){
+  const cid = st.settings.clientId;
+  const esperas = [450, 600, 900, 900, 900];          // ~3,7 s no total, sem travar nada
+  const tentar = async n => {
+    if(!pedido || pedido.id !== t.spotifyId) return;   // outro toque passou por cima
+    let e = null;
+    try{ e = await SP.playbackState(cid); }catch(err){}
+    if(e) aplicarEstado(e);
+    if(e?.is_playing && SP.mesmaFaixa(e.item, t.spotifyId)){
+      pedido.confirmado = true;
+      lembrarAparelho(e.device);
+      marcarLinhasAoVivo();
+      return;
+    }
+    if(n + 1 < esperas.length) return setTimeout(() => tentar(n + 1), esperas[n + 1]);
+    avisarNaoComecou(t, e);
+  };
+  setTimeout(() => tentar(0), esperas[0]);
+}
+
+function avisarSpotifyFechado(t){
+  alerta('O app do Spotify está fechado no iPad, por isso o comando não chegou.', [
+    { label:'Abrir e tocar', primaria:true, onClick: () => SP.openExternally('track', t.spotifyId, st.settings.openInApp) },
+    { label:'Escolher saída', onClick: openDevices }
+  ]);
+}
+
+function avisarNaoComecou(t, e){
+  pedido = null; marcarLinhasAoVivo(); paintSpotify();
+  const onde = e?.device?.name ? ` em "${e.device.name}"` : '';
+  const decks = (A.isPlaying('A') || A.isPlaying('B')) ? ' Abrir o Spotify vai pausar os decks A/B.' : '';
+  alerta(`O Spotify recebeu, mas não começou a tocar${onde}. O app dele pode ter adormecido.${decks}`, [
+    { label:'Abrir e tocar', primaria:true, onClick: () => SP.openExternally('track', t.spotifyId, st.settings.openInApp) },
+    { label:'Tentar de novo', onClick: () => tocarNoSpotify(t) }
+  ]);
 }
 
 async function cue(t, deckId, autoplay = false){
@@ -441,7 +537,7 @@ async function cue(t, deckId, autoplay = false){
     if(!blob) return toast('O arquivo desta peça não está mais no iPad. Reimporte.', true);
     await A.loadBlob(deckId, blob, { title: t.title, trackId: t.id });
     if(autoplay) await A.play(deckId);
-    paintDeck(deckId); paintTracks();
+    paintDeck(deckId); marcarLinhasAoVivo();
     toast(`${t.title} → deck ${deckId}`);
   }catch(e){ toast('Falha ao carregar: ' + e.message, true); }
 }
@@ -702,8 +798,18 @@ async function initSpotify(){
   if(SP.connected()){
     await checkSpotify();
     pollSpotify();
-    setInterval(() => { if(!document.hidden) pollSpotify(); }, 5000);
+    vigiarAparelho();
   }
+  // Os intervalos ficam de pé mesmo desconectado: se a conexão vier
+  // depois, a vigilância já está rodando.
+  setInterval(() => { if(!document.hidden) pollSpotify(); }, 5000);
+  setInterval(() => { if(!document.hidden) vigiarAparelho(); }, 20000);
+  // Voltar ao painel (vindo do Spotify, por exemplo) é o momento em que o
+  // estado mais provavelmente mudou: confere na hora.
+  document.addEventListener('visibilitychange', () => {
+    if(document.hidden) return;
+    pollSpotify(); vigiarAparelho();
+  });
 }
 
 /* Token válido não significa API liberada: em Development Mode o
@@ -738,21 +844,84 @@ const spCanRead = () => !!spProfile && !spFault;
 
 async function pollSpotify(){
   if(!spCanControl()) return;
+  try{ aplicarEstado(await SP.playbackState(st.settings.clientId)); }
+  catch(e){ /* silencioso: sondagem não deve incomodar o operador */ }
+}
+
+/** Tudo que chega do Spotify passa por aqui — da sondagem ou da
+    conferência de um pedido. Não redesenha a lista inteira: só acende e
+    apaga peças, para não engolir um toque que esteja acontecendo. */
+function aplicarEstado(e){
+  spState = e;
+  spPos = {
+    ms: e?.progress_ms || 0,
+    dur: e?.item?.duration_ms || 0,
+    at: Date.now(),
+    playing: !!e?.is_playing
+  };
+  if(e?.device){
+    spDeviceId = e.device.id;
+    if(spDormindo && e.device.id === alvoSpotify()){ spDormindo = false; }
+    const v = e.device.volume_percent;
+    if(typeof v === 'number' && Math.abs(v - st.settings.volumes.S) > 2) faders.S?.set(v/100, true);
+  }
+  vigiarEmenda(e);
+  paintSpotify();
+  marcarLinhasAoVivo();
+}
+
+/* Guarda contra a "reprodução automática" do Spotify: ao fim de uma
+   faixa ele emenda músicas parecidas por conta própria. No meio de uma
+   sessão, isso seria uma música aleatória entrando no ritual.
+
+   Quando a peça pedida está tocando, agenda uma conferência para o
+   instante em que ela termina. Se ali o Spotify estiver tocando outra
+   coisa, pausa. Troca no meio da peça não é mexida: essa foi o operador. */
+function vigiarEmenda(e){
+  if(!pedido) return;
+  const ehPedida = e?.item && SP.mesmaFaixa(e.item, pedido.id);
+
+  if(ehPedida && e.is_playing){
+    pedido.confirmado = true;
+    const resta = (e.item.duration_ms || 0) - (e.progress_ms || 0);
+    pedido.fim = Date.now() + resta;
+    clearTimeout(timerGuarda);
+    timerGuarda = setTimeout(pollSpotify, resta + 700);
+    return;
+  }
+  if(!pedido.confirmado || !e?.is_playing || ehPedida) return;
+  if(Date.now() < pedido.fim - 4000) return;             // trocou no meio: foi o operador
+
+  SP.pause(st.settings.clientId).catch(() => {});
+  pedido = null;
+  toast('A peça terminou e o Spotify ia emendar outra música por conta própria. Pausei.');
+}
+
+/* O app do Spotify, fechado ou adormecido pelo iPadOS, some da lista de
+   aparelhos, e aí nenhum comando chega. Descobrir isso só na hora da
+   deixa é tarde: esta vigilância percebe antes e acende o aviso no canal
+   S, para o operador acordá-lo num momento tranquilo. */
+async function vigiarAparelho(){
+  if(!spCanControl() || st.settings.modoSpotify === 'link'){
+    if(spDormindo){ spDormindo = false; paintSpotify(); }
+    return;
+  }
   try{
-    spState = await SP.playbackState(st.settings.clientId);
-    spPos = {
-      ms: spState?.progress_ms || 0,
-      dur: spState?.item?.duration_ms || 0,
-      at: Date.now(),
-      playing: !!spState?.is_playing
-    };
-    if(spState?.device){
-      spDeviceId = spState.device.id;
-      const v = spState.device.volume_percent;
-      if(typeof v === 'number' && Math.abs(v - st.settings.volumes.S) > 2) faders.S?.set(v/100, true);
+    const lista = (await SP.devices(st.settings.clientId))?.devices || [];
+    const salvo = st.settings.spDevice;
+    let achou = lista.find(d => d.id === salvo?.id);
+    if(!achou && salvo?.name){                          // o Spotify às vezes troca o id
+      achou = lista.find(d => d.name === salvo.name);
+      if(achou) lembrarAparelho(achou);
     }
-    paintSpotify(); paintTracks();
-  }catch(e){ /* silencioso: sondagem não deve incomodar o operador */ }
+    spDormindo = salvo ? !achou : lista.length === 0;
+  }catch(e){ /* sem rede: não conclui nada */ }
+  paintSpotify();
+}
+
+function acordarSpotify(){
+  SP.abrirApp();
+  toast('Abrindo o Spotify. Volte ao painel quando ele abrir.');
 }
 
 function paintSpotify(){
@@ -761,6 +930,7 @@ function paintSpotify(){
   // Verde só quando a API respondeu de verdade (spProfile preenchido).
   const logged = SP.connected();
   const working = logged && !spFault && !!spProfile;
+  deck.classList.toggle('dormindo', working && spDormindo);
 
   let label_, cls;
   if(!logged){                 // sem token: nunca é "verificando"
@@ -790,9 +960,25 @@ function paintSpotify(){
     $('#spToggle').classList.remove('on');
     return;
   }
+  if(spDormindo){
+    chip.className = 'chip chip-warn';
+    label.textContent = 'Spotify fechado';
+    $('#spTitle').textContent = 'O app do Spotify está fechado';
+    $('#spDevice').textContent = 'toque na luz do topo para abrir';
+    $('#spToggle').classList.remove('on');
+    return;
+  }
+
+  // O Spotify no iPad não aceita volume por comando remoto: o fader
+  // fica desligado para não fingir que controla alguma coisa.
+  faders.S?.enable(spCanControl() && spState?.device?.supports_volume !== false);
+
   const it = spState?.item;
-  $('#spTitle').textContent = it ? `${it.name} — ${(it.artists||[]).map(a=>a.name).join(', ')}` : 'Nada tocando';
-  $('#spDevice').textContent = spState?.device ? spState.device.name : 'sem aparelho ativo';
+  if(it) $('#spTitle').textContent = `${it.name} — ${(it.artists||[]).map(a=>a.name).join(', ')}`;
+  else if(!pedido) $('#spTitle').textContent = 'Nada tocando';
+  $('#spDevice').textContent = spState?.device
+    ? spState.device.name + (spState.device.supports_volume === false ? ' · volume no aparelho' : '')
+    : (st.settings.spDevice?.name ? st.settings.spDevice.name + ' · pronto' : 'sem aparelho ativo');
   $('#spToggle').textContent = spState?.is_playing ? '❚❚' : '▶';
   $('#spToggle').classList.toggle('on', !!spState?.is_playing);
 }
@@ -813,12 +999,16 @@ async function openDevices(){
       box.append(el('button', { class:'dev-item' + (dev.is_active ? ' on' : ''), onclick: async () => {
         try{
           await SP.transferTo(st.settings.clientId, dev.id, false);
-          spDeviceId = dev.id; toast('Saída: ' + dev.name);
+          spDeviceId = dev.id;
+          st.settings.spDevice = { id: dev.id, name: dev.name }; S.save();
+          spDormindo = false;
+          toast('Saída: ' + dev.name + ' — fica guardada para as próximas peças.');
           setTimeout(pollSpotify, 600); closeModal();
         }catch(e){ toast(e.message, true); }
       }},
         el('span', { class:'grow' }, dev.name),
         el('span', { class:'badge' }, dev.type),
+        st.settings.spDevice?.id === dev.id ? el('span', { class:'badge local' }, 'escolhido') : null,
         dev.is_active ? el('span', { class:'badge sp' }, 'ativo') : null
       ));
     }
@@ -959,9 +1149,13 @@ function openSettings(){
     el('div', { class:'field', style:'margin-top:16px' },
       el('label', {}, 'Como tocar as peças do Spotify'), modoSp,
       el('p', { class:'hint' },
-        'Comandar daqui é mais elegante, mas exige o app do Spotify rodando no aparelho — ' +
-        'se ele for fechado, o comando não chega e nada toca. Abrir o app sempre funciona, ' +
-        'ao custo de trocar de tela.')),
+        'Comandar daqui mantém você no painel: a peça acende na hora e o app confere por trás. ' +
+        'Exige o app do Spotify aberto no iPad — se ele fechar, a luz do topo avisa antes da ' +
+        'próxima deixa, e um toque nela o abre. Abrir o app sempre funciona, ao custo de trocar de tela.'),
+      el('p', { class:'hint', html:
+        'Recomendado: desligue a <strong>reprodução automática</strong> no Spotify ' +
+        '(Ajustes → Reprodução). O painel já pausa se ele emendar outra música ao fim da peça, ' +
+        'mas desligar evita até o primeiro segundo.' })),
     el('div', { class:'field' },
       el('label', {}, 'Ao abrir a peça no Spotify'), openApp),
 
@@ -1133,10 +1327,13 @@ function tick(){
     tick.avisou = true;
     toast('O som está bloqueado pelo iPad. Toque na tela e aperte ▶ de novo.', true);
   }
+  // Tela acesa enquanto houver som — dos decks ou do Spotify. Se o iPad
+  // bloqueia no meio da sessão, o painel some e o operador perde a deixa.
+  const somNoAr = anyPlaying || spPos.playing;
+  if(somNoAr !== tick.acordado){ tick.acordado = somNoAr; A.keepAwake(somNoAr); }
   if(anyPlaying !== tick.last){
     tick.last = anyPlaying;
-    A.keepAwake(anyPlaying);
-    paintDeck('A'); paintDeck('B'); paintTracks();
+    paintDeck('A'); paintDeck('B'); marcarLinhasAoVivo();
   }
 }
 
@@ -1155,9 +1352,97 @@ function pintarBarraSpotify(){
   scrub.disabled = !spCanControl() || !dur;
 }
 
+/* ═══════════ Deixas ═══════════ */
+
+let ultimoGo = 0;
+
+function proximaDeixa(){
+  const seq = D.sequencia(st);
+  const i = D.posicao(seq, st.settings.proximaId);
+  return (i >= 0 && i < seq.length) ? seq[i] : null;
+}
+
+function apontar(id){
+  st.settings.proximaId = id;
+  S.save();
+}
+
+/** Tocar uma peça, por qualquer caminho, põe o ponteiro logo depois dela.
+    Peça fora da sequência (vinda da busca, por exemplo) não mexe nele. */
+function avancarDeixa(t){
+  const depois = D.depoisDe(D.sequencia(st), t.id);
+  if(depois !== null) apontar(depois);
+  pintarDeixas();
+}
+
+async function irDeixa(){
+  // Um pedal que repica ou um toque duplo não podem disparar duas peças.
+  if(Date.now() - ultimoGo < 700) return;
+  ultimoGo = Date.now();
+  const d = proximaDeixa();
+  if(!d) return toast(D.sequencia(st).length ? 'Fim do roteiro.' : 'O roteiro está vazio.');
+  if(st.selectedMomentId !== d.m.id){          // mostra onde a sessão está
+    st.selectedMomentId = d.m.id;
+    paintMoments(); paintTracks();
+  }
+  await playTrack(d.t);
+}
+
+function moverDeixa(passo){
+  const seq = D.sequencia(st);
+  if(!seq.length) return;
+  const i = D.posicao(seq, st.settings.proximaId);
+  apontar(D.idNaPosicao(seq, Math.min(seq.length, Math.max(0, i + passo))));
+  marcarLinhasAoVivo();
+}
+
+function pintarDeixas(){
+  const seq = D.sequencia(st);
+  const i = D.posicao(seq, st.settings.proximaId);
+  const vazio = !seq.length, fim = i >= seq.length;
+
+  $('#dxVoltar').disabled = vazio || i <= 0;
+  $('#dxPular').disabled  = vazio || fim;
+  $('#dxGo').disabled     = vazio || fim;
+
+  if(vazio){
+    $('#dxRotulo').textContent = 'ROTEIRO';
+    $('#dxTitulo').textContent = 'Nenhuma peça no roteiro';
+    $('#dxDepois').textContent = '';
+    return;
+  }
+  if(fim){
+    $('#dxRotulo').textContent = 'FIM';
+    $('#dxTitulo').textContent = 'Todas as peças já tocaram';
+    $('#dxDepois').textContent = '◀ volta uma peça';
+    return;
+  }
+  const { m, t } = seq[i];
+  $('#dxRotulo').textContent = 'PRÓXIMA · ' + m.name.toUpperCase();
+  $('#dxTitulo').textContent = t.title;
+  const seg = seq[i + 1];
+  $('#dxDepois').textContent = seg ? 'depois: ' + seg.t.title : 'última peça do roteiro';
+}
+
+function wireDeixas(){
+  $('#dxGo').onclick     = () => irDeixa();
+  $('#dxPular').onclick  = () => moverDeixa(1);
+  $('#dxVoltar').onclick = () => moverDeixa(-1);
+
+  // Teclado e pedais de virar página Bluetooth — o jeito de tocar a
+  // sessão sem olhar para a tela.
+  document.addEventListener('keydown', e => {
+    if(e.repeat || e.metaKey || e.ctrlKey || e.altKey) return;
+    if(e.target.closest?.('input, textarea, select')) return;
+    if(!$('#modalRoot').classList.contains('hidden')) return;
+    if(['PageDown', 'ArrowRight', ' '].includes(e.key)){ e.preventDefault(); irDeixa(); }
+    else if(['PageUp', 'ArrowLeft'].includes(e.key)){ e.preventDefault(); moverDeixa(-1); }
+  });
+}
+
 function renderAll(){
   $('#lodgeName').textContent = st.lodge;
-  paintMoments(); paintTracks(); paintDeck('A'); paintDeck('B'); paintSpotify();
+  paintMoments(); paintTracks(); paintDeck('A'); paintDeck('B'); paintSpotify(); pintarDeixas();
 }
 
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c]));
