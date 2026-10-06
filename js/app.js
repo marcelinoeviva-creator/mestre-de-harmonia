@@ -24,6 +24,7 @@ let pedido = null;        // { id, trackId, titulo, confirmado, incerto, antes, 
    resposta. Existe para diagnosticar no iPad de verdade: uma foto dele
    mostra se o pedido chegou, se a música começou, quando, e se o próprio
    painel estava com o áudio do aparelho no instante do toque. */
+const VERSAO = '06/10-c';   // aparece em Ajustes e no resumo de falha: diz qual versão está no iPad
 const registro = [];
 let t0Pedido = 0;
 function reg(msg){
@@ -493,14 +494,40 @@ async function tocarNoSpotify(t){
   await A.soltar();
   if(pedido) pedido.audio = audioAntes === A.estado() ? audioAntes : `${audioAntes}→${A.estado()}`;
 
+  /* Duas formas de pedir a peça.
+
+     "Direto" manda o Spotify largar o que toca e começar outra coisa. No
+     iPad, com o Spotify atrás do painel, ele aceita, para — e não
+     recomeça (visto no aparelho: "antes: tocando", "ficou parado").
+
+     "Fila" põe a peça na fila e manda avançar, como o botão de próxima
+     faixa: a reprodução não é desmontada, só segue adiante. Vale quando
+     o Spotify já está tocando; parado, não há o que avançar.
+
+     O aparelho é sempre o que o Spotify diz estar ativo: não se escolhe
+     aparelho por conta própria (em 24/09 as músicas foram parar no Mac). */
+  const dev = spDeviceId || undefined;
+  const direto = () => SP.playTrack(cid, t.spotifyId, dev);
+  pedido.via = spState?.is_playing ? 'fila' : 'direto';
   try{
-    /* O aparelho é o que o Spotify diz estar ativo — exatamente como na
-       versão de 09/09, que funcionava. A revisão de 24/09 passou a
-       guardar um aparelho e a escolher outro da lista quando não o
-       achava; o Spotify do Mac entra nessa lista, e as músicas foram
-       parar lá. Não se escolhe aparelho por conta própria. */
-    await SP.playTrack(cid, t.spotifyId, spDeviceId || undefined);
-    reg('pedido aceito pelo Spotify' + (spDeviceId ? '' : ' (sem aparelho indicado)'));
+    if(pedido.via === 'fila'){
+      try{
+        await SP.enfileirar(cid, t.spotifyId, dev);
+        const saltos = filaSuja ? await saltosAte(t) : 1;
+        for(let i = 0; i < saltos; i++) await SP.next(cid, dev);
+        filaSuja = true;                       // até a conferência confirmar
+        reg(`pedido aceito pelo Spotify (fila, ${saltos} avanço${saltos > 1 ? 's' : ''})`);
+      }catch(e){
+        if(e.code === 'NO_DEVICE') throw e;
+        reg(`fila recusada (${e.code || ''} ${e.message}); pedindo direto`);
+        pedido.via = 'fila recusada, direto';
+        await direto();
+        reg('pedido aceito pelo Spotify (direto)');
+      }
+    }else{
+      await direto();
+      reg('pedido aceito pelo Spotify (direto)' + (dev ? '' : ' (sem aparelho indicado)'));
+    }
   }catch(e){
     reg(`pedido recusado: ${e.code || ''} ${e.message}`);
     pedido = null; marcarLinhasAoVivo(); paintSpotify();
@@ -510,8 +537,18 @@ async function tocarNoSpotify(t){
   conferirInicio(t);
 }
 
-/** Confere por trás. A peça já está acesa; aqui só se descobre se deu
-    certo. Silencioso no sucesso, que é o caso comum. */
+/* Uma tentativa pela fila que não se confirmou pode ter deixado a peça
+   lá. Na vez seguinte, um avanço só cairia nela, e não na peça pedida:
+   aí o painel lê a fila e avança até chegar à certa. */
+let filaSuja = false;
+async function saltosAte(t){
+  try{
+    const f = await SP.fila(st.settings.clientId);
+    const i = (f?.queue || []).findIndex(item => ehAPeca(item, t));
+    return i >= 0 ? Math.min(i + 1, 4) : 1;
+  }catch(e){ return 1; }
+}
+
 const normal = x => (x || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
 
 /** É a peça pedida? Pelo código, pela versão regional, ou pelo nome —
@@ -539,6 +576,7 @@ function conferirInicio(t){
     catch(err){ e = undefined; reg(`leitura ${n + 1} falhou: ${err.message}`); }
     if(e?.is_playing && ehAPeca(e.item, t)){
       reg('CONFIRMADO: a peça está tocando');
+      if(pedido.via === 'fila') filaSuja = false;
       pedido.confirmado = true;
       marcarLinhasAoVivo();
       return;
@@ -546,7 +584,8 @@ function conferirInicio(t){
     /* Aceito e parado depois de ~2 s: pede de novo antes de desistir.
        Se a faixa já está carregada, basta mandar seguir. */
     if(n === 2 && e && !e.is_playing && !pedido.segundo){
-      const carregada = ehAPeca(e.item, t);
+      // Pela fila, só manda seguir: o pedido direto é justamente o que trava.
+      const carregada = ehAPeca(e.item, t) || pedido.via === 'fila';
       pedido.segundo = 'sem efeito';
       reg(carregada ? 'segundo pedido: retomar' : 'segundo pedido: tocar de novo');
       (carregada ? SP.resume(cid) : SP.playTrack(cid, t.spotifyId, spDeviceId || undefined))
@@ -599,7 +638,7 @@ function abrirNoSpotify(t, msg, diag = ''){
 function avisarNaoComecou(t, e){
   /* Resumo curto do que aconteceu, junto da mensagem: uma foto dela já
      diz onde está o defeito, sem precisar abrir o registro. */
-  const diag = ` [antes: ${pedido?.antes || '?'}; faixa: ${e && ehAPeca(e.item, t) ? 'carregada' : 'não carregada'}; ` +
+  const diag = ` [v${VERSAO}; via ${pedido?.via || '?'}; antes: ${pedido?.antes || '?'}; faixa: ${e && ehAPeca(e.item, t) ? 'carregada' : 'não carregada'}; ` +
                `2º pedido: ${pedido?.segundo || 'não feito'}; som do painel: ${pedido?.audio || '?'}]`;
   reg('desistiu' + diag);
   pedido = null; marcarLinhasAoVivo(); paintSpotify();
@@ -1172,6 +1211,7 @@ function openSettings(){
       el('button', { class:'ghost-btn', onclick: openDiagnostico }, 'Diagnóstico da conexão'),
       el('button', { class:'ghost-btn', onclick: openRegistro }, 'Registro do Spotify'),
       el('button', { class:'ghost-btn', onclick: buscarAtualizacao }, 'Buscar atualização')),
+    el('p', { class:'hint' }, 'Versão instalada: ' + VERSAO),
     el('div', { class:'field' },
       el('button', { class:'ghost-btn', style:'width:100%', onclick: async e => {
           const antes = e.target.textContent;
