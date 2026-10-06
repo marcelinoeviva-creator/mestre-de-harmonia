@@ -51,7 +51,15 @@ async function boot(){
   wireDeixas();
   renderAll();
 
-  document.addEventListener('pointerdown', () => { A.unlock(); S.persistir(); }, { once: true });
+  /* O motor de som dos decks só nasce para quem tem arquivos de áudio no
+     roteiro. Num roteiro só de Spotify o painel não toca no áudio do
+     iPad — e é esse o ponto: com o motor ligado, o Spotify aceitava a
+     peça e não conseguia começar em segundo plano. O motor precisa nascer
+     dentro de um toque (regra do iPadOS), por isso o gancho é este. */
+  const temArquivo = () => Object.values(st.tracks).some(t => t.fileKey);
+  document.addEventListener('pointerdown', () => { if(!A.ready() && temArquivo()) A.unlock(); });
+  document.addEventListener('pointerdown', () => S.persistir(), { once: true });
+  for(const alvo of ['A','B','M']) A.setLevel(alvo, (st.settings.volumes[alvo] ?? 80) / 100);
   S.persistir();
 
   A.onEnded(id => { paintDeck(id); marcarLinhasAoVivo(); });
@@ -563,7 +571,7 @@ function conferirInicio(t){
 let motivoAbertura = null;      // { texto, ate } — por que o app abriu o Spotify
 
 function registrarMotivo(texto, prefixo = 'abriu o Spotify: '){
-  motivoAbertura = { texto: prefixo + texto, ate: Date.now() + 60000 };
+  motivoAbertura = { texto: prefixo + texto, ate: Date.now() + 180000 };
   const l = $('#spDevice'); if(l) l.textContent = motivoAbertura.texto;
 }
 
@@ -1355,6 +1363,7 @@ function tick(){
     if(A.isPlaying(id)) anyPlaying = true;
   }
   pintarBarraSpotify();
+  A.vigiarCalado();
   if(anyPlaying && A.estado() !== 'running' && !tick.avisou){
     tick.avisou = true;
     toast('O som está bloqueado pelo iPad. Toque na tela e aperte ▶ de novo.', true);

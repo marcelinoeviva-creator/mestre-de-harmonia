@@ -13,6 +13,11 @@
 let ctx = null;
 let master = null;
 
+/* Posição dos faders, guardada fora do motor: assim mexer num fader não
+   obriga o motor a existir, e ele já nasce nos volumes certos. */
+const niveis = { A: 0.8, B: 0.8, M: 0.9 };
+const aoTerminar = [];      // quem quer saber que um deck chegou ao fim
+
 export const decks = { A: null, B: null };
 
 /* Categoria de áudio e por que ela precisa de cuidado:
@@ -38,10 +43,10 @@ export function garantirContexto(){
   if(!ctx){
     ctx = new (window.AudioContext || window.webkitAudioContext)();
     master = ctx.createGain();
-    master.gain.value = 0.9;
+    master.gain.value = curve(niveis.M);
     master.connect(ctx.destination);
     for(const id of ['A','B']) decks[id] = makeDeck(id);
-    sessao('auto');          // explícito: nasce mixável, dividindo o áudio
+    sessao('ambient');       // nasce mixável, dividindo o áudio
     // Nasce ligado e ficava ligado até um deck tocar e parar. Numa sessão
     // só de Spotify isso nunca acontecia: o painel passava a noite com o
     // áudio do iPad aberto, em silêncio — e o iPadOS não deixa um app em
@@ -68,24 +73,44 @@ export const unlock = garantirContexto;
 /** Devolve o áudio ao sistema quando os dois decks estão calados —
     é o que deixa o Spotify seguir tocando por cima do painel. */
 let timerLiberar = null;
+let seguraAte = 0;          // som sem deck em curso (o bipe de teste)
+
+/* Desliga o motor em qualquer estado que não seja "desligado". O caso
+   que importa é "interrupted": o Spotify começou a tocar com o motor
+   ligado, o iPadOS o interrompeu, e ele fica à espera de retomar. Na
+   troca de peça o Spotify para um instante, o motor retoma, o painel
+   fica com o áudio — e o Spotify, em segundo plano, não consegue
+   recomeçar. Pedir suspend() aqui cancela essa retomada. */
+function calar(){
+  sessao('ambient');
+  if(ctx.state !== 'suspended' && ctx.state !== 'closed') return ctx.suspend().catch(() => {});
+  return Promise.resolve();
+}
+
 export function liberarSeCalado(){
   clearTimeout(timerLiberar);
   timerLiberar = setTimeout(() => {
+    timerLiberar = null;
     if(!ctx || isPlaying('A') || isPlaying('B')) return;
-    sessao('auto');
-    if(ctx.state === 'running') ctx.suspend().catch(() => {});
+    calar();
   }, 400);   // margem para transições, em que um deck para e outro entra
+}
+
+/** Chamado a cada instante pelo painel: se nenhum deck toca e o motor
+    não está desligado (o iPadOS o religa ao voltar de outro app),
+    desliga. */
+export function vigiarCalado(){
+  if(!ctx || timerLiberar || Date.now() < seguraAte) return;
+  if(isPlaying('A') || isPlaying('B')) return;
+  if(ctx.state !== 'suspended' && ctx.state !== 'closed') calar();
 }
 
 /** Solta o áudio já, sem esperar a margem — antes de mandar uma peça ao
     Spotify. Com deck no ar não solta: aí o áudio é mesmo do painel. */
 export async function soltar(){
   if(!ctx || isPlaying('A') || isPlaying('B')) return false;
-  clearTimeout(timerLiberar);
-  sessao('auto');
-  if(ctx.state === 'running'){
-    try{ await Promise.race([ctx.suspend(), new Promise(r => setTimeout(r, 300))]); }catch(e){}
-  }
+  clearTimeout(timerLiberar); timerLiberar = null;
+  try{ await Promise.race([calar(), new Promise(r => setTimeout(r, 300))]); }catch(e){}
   return true;
 }
 
@@ -94,6 +119,7 @@ export async function soltar(){
 document.addEventListener('visibilitychange', () => {
   if(document.hidden || !ctx) return;
   if(isPlaying('A') || isPlaying('B')) ativar();
+  else calar();
 });
 
 /** Estado do motor de áudio, para a interface poder avisar o operador. */
@@ -108,16 +134,16 @@ function makeDeck(id){
   el.playsInline = true;
 
   const gain = ctx.createGain();
-  gain.gain.value = 0.8;
+  gain.gain.value = curve(niveis[id]);
   gain.connect(master);
 
   const src = ctx.createMediaElementSource(el);
   src.connect(gain);
-  el.addEventListener('ended', () => liberarSeCalado());   // terminou sozinho: devolve o áudio
+  el.addEventListener('ended', () => { liberarSeCalado(); for(const fn of aoTerminar) fn(id); });
 
   return {
     id, el, gain,
-    level: 0.8,          // posição do fader (independe do fade em curso)
+    level: niveis[id],   // posição do fader (independe do fade em curso)
     trackId: null,
     title: '',
     objectUrl: null,
@@ -198,9 +224,7 @@ export function times(deckId){
   return { cur, dur, ratio: dur ? cur / dur : 0 };
 }
 
-export function onEnded(fn){
-  for(const id of ['A','B']) decks[id]?.el.addEventListener('ended', () => fn(id));
-}
+export function onEnded(fn){ aoTerminar.push(fn); }
 
 /* ── Volume ───────────────────────────────── */
 
@@ -218,7 +242,8 @@ function applyGain(d, level, seconds = 0.05){
 
 /* level de 0 a 1. Alvo 'M' é o volume mestre. */
 export function setLevel(target, level){
-  unlock();
+  niveis[target] = level;
+  if(!ctx) return;                 // sem motor: fica guardado para quando ele nascer
   if(target === 'M'){
     const t = ctx.currentTime;
     master.gain.cancelScheduledValues(t);
@@ -240,9 +265,8 @@ function cancelFade(d){
    Se o deck já estiver no ar, sobe a partir de onde está — assim
    pedir a transição duas vezes não dá um tranco no som. */
 export async function fadeIn(deckId, seconds){
-  unlock();
   const d = decks[deckId];
-  if(!d.objectUrl) return false;
+  if(!ctx || !d?.objectUrl) return false;
   const alreadyLive = !d.el.paused;
   cancelFade(d);
   const t = ctx.currentTime;
@@ -257,9 +281,8 @@ export async function fadeIn(deckId, seconds){
 
 /* Fade de saída: desce até zero e pausa, mantendo a posição do fader. */
 export function fadeOut(deckId, seconds, { stopAtEnd = true } = {}){
-  unlock();
   const d = decks[deckId];
-  if(!d.objectUrl) return;
+  if(!ctx || !d?.objectUrl) return;
   cancelFade(d);
   const t = ctx.currentTime;
   d.gain.gain.cancelScheduledValues(t);
@@ -277,7 +300,7 @@ export function fadeOut(deckId, seconds, { stopAtEnd = true } = {}){
 /* Transição cruzada: o que está tocando sai enquanto o outro entra.
    É exatamente o "soltar a próxima um pouquinho antes". */
 export async function crossfade(seconds){
-  unlock();
+  if(!ctx) return { from: null, to: null };
   const aLive = isPlaying('A'), bLive = isPlaying('B');
   let from, to;
   if(aLive && !bLive)      { from = 'A'; to = 'B'; }
@@ -294,6 +317,7 @@ export async function crossfade(seconds){
     saída). Se este tom não sai, o problema é o motor de áudio ou o
     volume do iPad, não o arquivo. */
 export async function testeDeSom(){
+  seguraAte = Date.now() + 1500;
   await ativar();
   const osc = ctx.createOscillator();
   const g = ctx.createGain();
