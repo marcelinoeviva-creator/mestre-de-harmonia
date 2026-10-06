@@ -42,6 +42,12 @@ export function garantirContexto(){
     master.connect(ctx.destination);
     for(const id of ['A','B']) decks[id] = makeDeck(id);
     sessao('auto');          // explícito: nasce mixável, dividindo o áudio
+    // Nasce ligado e ficava ligado até um deck tocar e parar. Numa sessão
+    // só de Spotify isso nunca acontecia: o painel passava a noite com o
+    // áudio do iPad aberto, em silêncio — e o iPadOS não deixa um app em
+    // segundo plano (o Spotify) começar a tocar por cima de quem está na
+    // frente com o áudio aberto. Desliga logo; ativar() religa.
+    liberarSeCalado();
   }
   return ctx;
 }
@@ -69,6 +75,18 @@ export function liberarSeCalado(){
     sessao('auto');
     if(ctx.state === 'running') ctx.suspend().catch(() => {});
   }, 400);   // margem para transições, em que um deck para e outro entra
+}
+
+/** Solta o áudio já, sem esperar a margem — antes de mandar uma peça ao
+    Spotify. Com deck no ar não solta: aí o áudio é mesmo do painel. */
+export async function soltar(){
+  if(!ctx || isPlaying('A') || isPlaying('B')) return false;
+  clearTimeout(timerLiberar);
+  sessao('auto');
+  if(ctx.state === 'running'){
+    try{ await Promise.race([ctx.suspend(), new Promise(r => setTimeout(r, 300))]); }catch(e){}
+  }
+  return true;
 }
 
 /* Ao voltar para o app, retoma apenas se havia deck no ar. Retomar à

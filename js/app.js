@@ -18,7 +18,7 @@ let volTimer = null;
 /* O último pedido feito ao Spotify. Existe porque o Spotify responde
    "recebido" antes de tocar, e a interface precisa saber o que foi pedido
    para acender a peça na hora e confirmar em segundo plano. */
-let pedido = null;        // { id, trackId, titulo, confirmado, incerto }
+let pedido = null;        // { id, trackId, titulo, confirmado, incerto, antes, audio, segundo }
 
 /* Registro do que o Spotify responde a cada peça, com o tempo de cada
    resposta. Existe para diagnosticar no iPad de verdade: uma foto dele
@@ -473,10 +473,17 @@ async function tocarNoSpotify(t){
   pedido = { id: t.spotifyId, trackId: t.id, titulo: t.title, confirmado: false };
   t0Pedido = performance.now();
   reg(`TOQUE "${t.title}" · antes: ${descreveEstado(spState)} · ${somDoPainel()}`);
+  pedido.antes = !spState ? 'sem aparelho' : spState.is_playing ? 'tocando' : 'parado';
+  const audioAntes = A.estado();
   motivoAbertura = null;
   $('#spTitle').textContent = t.title;
   $('#spDevice').textContent = 'iniciando…';
   marcarLinhasAoVivo();
+
+  /* O painel não pode estar com o áudio do iPad aberto quando o Spotify
+     for começar: o iPadOS barra o início de quem está em segundo plano. */
+  await A.soltar();
+  if(pedido) pedido.audio = audioAntes === A.estado() ? audioAntes : `${audioAntes}→${A.estado()}`;
 
   try{
     /* O aparelho é o que o Spotify diz estar ativo — exatamente como na
@@ -528,6 +535,15 @@ function conferirInicio(t){
       marcarLinhasAoVivo();
       return;
     }
+    /* Aceito e parado depois de ~2 s: pede de novo antes de desistir.
+       Se a faixa já está carregada, basta mandar seguir. */
+    if(n === 2 && e && !e.is_playing && !pedido.segundo){
+      const carregada = ehAPeca(e.item, t);
+      pedido.segundo = 'sem efeito';
+      reg(carregada ? 'segundo pedido: retomar' : 'segundo pedido: tocar de novo');
+      (carregada ? SP.resume(cid) : SP.playTrack(cid, t.spotifyId, spDeviceId || undefined))
+        .catch(err => { if(pedido) pedido.segundo = 'recusado'; reg('segundo pedido recusado: ' + err.message); });
+    }
     if(n + 1 < esperas.length) return setTimeout(() => tentar(n + 1), esperas[n + 1]);
     if(!lido){                                          // não conseguiu ler: não conclui nada
       pedido.incerto = true;                            // para de piscar "iniciando"
@@ -551,12 +567,12 @@ function registrarMotivo(texto, prefixo = 'abriu o Spotify: '){
   const l = $('#spDevice'); if(l) l.textContent = motivoAbertura.texto;
 }
 
-function abrirNoSpotify(t, msg){
+function abrirNoSpotify(t, msg, diag = ''){
   const avisar = st.settings.seNaoComecar === 'avisar';
-  registrarMotivo(msg.replace(/\s*Abrindo.*$/, ''), avisar ? 'não tocou: ' : undefined);
+  registrarMotivo(msg.replace(/\s*Abrindo.*$/, '') + diag, avisar ? 'não tocou: ' : undefined);
   if(avisar){
     reg('não abriu o Spotify (Ajustes: só avisar)');
-    alerta(msg.replace(/\s*Abrindo.*$/, ''), [
+    alerta(msg.replace(/\s*Abrindo.*$/, '') + diag, [
       { label:'Abrir e tocar', primaria:true, onClick: () => SP.openExternally('track', t.spotifyId, st.settings.openInApp) }
     ], 30000);
     return;
@@ -568,17 +584,22 @@ function abrirNoSpotify(t, msg){
     ]);
     return;
   }
-  toast(msg);
+  toast(msg + diag);
   SP.openExternally('track', t.spotifyId, st.settings.openInApp);
 }
 
 function avisarNaoComecou(t, e){
+  /* Resumo curto do que aconteceu, junto da mensagem: uma foto dela já
+     diz onde está o defeito, sem precisar abrir o registro. */
+  const diag = ` [antes: ${pedido?.antes || '?'}; faixa: ${e && ehAPeca(e.item, t) ? 'carregada' : 'não carregada'}; ` +
+               `2º pedido: ${pedido?.segundo || 'não feito'}; som do painel: ${pedido?.audio || '?'}]`;
+  reg('desistiu' + diag);
   pedido = null; marcarLinhasAoVivo(); paintSpotify();
   const onde = e?.device?.name ? ` em "${e.device.name}"` : '';
   const oque = !e ? 'não informou nenhum aparelho ativo'
              : e.is_playing ? `continuou tocando "${e.item?.name || '?'}"${onde}`
              : `ficou parado${onde}`;
-  abrirNoSpotify(t, `O Spotify aceitou o pedido mas ${oque}. Abrindo no app…`);
+  abrirNoSpotify(t, `O Spotify aceitou o pedido mas ${oque}. Abrindo no app…`, diag);
 }
 
 async function cue(t, deckId, autoplay = false){
