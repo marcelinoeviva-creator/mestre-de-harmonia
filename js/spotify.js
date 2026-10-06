@@ -359,7 +359,16 @@ export const playTrack = (cid, trackId, deviceId) =>
 
 export const resume  = cid => call(cid, '/me/player/play',  { method: 'PUT' });
 export const pause   = cid => call(cid, '/me/player/pause', { method: 'PUT' });
-export const next    = cid => call(cid, '/me/player/next',     { method: 'POST' });
+export const next    = (cid, deviceId) =>
+  call(cid, '/me/player/next', { method: 'POST', query: deviceId ? { device_id: deviceId } : undefined });
+
+/** Põe a faixa na fila do Spotify, logo depois da que está tocando. */
+export const enfileirar = (cid, trackId, deviceId) =>
+  call(cid, '/me/player/queue', { method: 'POST',
+    query: Object.assign({ uri: uri('track', trackId) }, deviceId ? { device_id: deviceId } : {}) });
+
+/** A fila como o Spotify a vê: a que toca e as próximas. */
+export const fila = cid => call(cid, '/me/player/queue');
 export const prev    = cid => call(cid, '/me/player/previous', { method: 'POST' });
 
 /** Pula para uma posição da faixa, em milissegundos. */
