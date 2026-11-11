@@ -37,7 +37,8 @@ function freshState(){
       modoSpotify: 'connect',
       spDevice: null,       // { id, name } — saída escolhida, lembrada entre sessões
       proximaId: '',
-      seNaoComecar: 'abrir',  // 'abrir' o Spotify ou só 'avisar' quando a peça não começa        // ponteiro da lista de deixas (id da próxima peça)
+      seNaoComecar: 'abrir',
+      somDecks: 'misturar',   // 'misturar' com o Spotify, ou 'exclusivo' (toca no silencioso, mas pausa o Spotify)  // 'abrir' o Spotify ou só 'avisar' quando a peça não começa        // ponteiro da lista de deixas (id da próxima peça)
       fadeSeconds: 5,
       volumes: { A: 80, B: 80, M: 90, S: 70 }
     },

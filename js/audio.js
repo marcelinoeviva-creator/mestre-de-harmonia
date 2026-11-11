@@ -57,10 +57,28 @@ export function garantirContexto(){
   return ctx;
 }
 
+/* Misturar ou não com o Spotify.
+
+   "playback" toca mesmo com o iPad no silencioso, mas não divide o som:
+   quando um deck começa, o iPadOS pausa o Spotify. Pausado atrás do
+   painel, ele logo adormece e some da lista de aparelhos — a peça
+   seguinte do Spotify não toca ("não respondeu", "nenhum aparelho
+   ativo"). E com o deck no ar o Spotify também não consegue começar.
+
+   "ambient" divide o som: deck e Spotify tocam juntos, e o Spotify nunca
+   é interrompido. O preço é que o modo silencioso do iPad emudece os
+   decks. É o padrão, porque a sessão alterna deck e Spotify. */
+let misturar = true;
+export function modoMistura(sim){
+  misturar = !!sim;
+  if(ctx && (isPlaying('A') || isPlaying('B'))) sessao(misturar ? 'ambient' : 'playback');
+}
+export const misturando = () => misturar;
+
 /** Assume o áudio do aparelho. Só quando um deck vai tocar. */
 export async function ativar(){
   garantirContexto();
-  sessao('playback');
+  sessao(misturar ? 'ambient' : 'playback');
   if(ctx.state !== 'running'){
     try{ await ctx.resume(); }catch(e){ /* segue e tenta tocar */ }
   }
