@@ -248,7 +248,25 @@ function notJsonError(r, text){
     'NOT_JSON');
 }
 
-async function call(clientId, path, { method = 'GET', body, query } = {}){
+/* Erro 5xx (502 "Bad gateway", 503, 504) é o servidor do Spotify que não
+   conseguiu resposta a tempo — no iPad, quase sempre o app do Spotify
+   adormecido. É passageiro: leituras tentam de novo sozinhas. Comandos de
+   player não se repetem aqui (repetir um "avançar" pularia duas peças);
+   quem pediu confere depois se a peça começou. */
+const espera = ms => new Promise(r => setTimeout(r, ms));
+async function call(clientId, path, opts = {}){
+  const metodo = opts.method || 'GET';
+  const tentativas = metodo !== 'GET' ? 0 : path.startsWith('/me/player') ? 1 : 2;
+  for(let i = 0; ; i++){
+    try{ return await call1(clientId, path, opts); }
+    catch(e){
+      if(e.code !== 'GATEWAY' || i >= tentativas) throw e;
+      await espera(500 + i * 1000);
+    }
+  }
+}
+
+async function call1(clientId, path, { method = 'GET', body, query } = {}){
   const token = await ensureToken(clientId);
   const url = new URL(API + path);
   if(query) for(const [k, v] of Object.entries(query)) url.searchParams.set(k, v);
@@ -294,6 +312,12 @@ async function call(clientId, path, { method = 'GET', body, query } = {}){
         'não é a mesma que criou o app — entre com a conta dona, ou adicione a sua em User Management; ' +
         '(2) o app não está com "Web API" marcado em Settings → Edit.' +
         raw(r.status, msg, reason), 'FORBIDDEN');
+    if(r.status >= 500)
+      throw new SpotifyError(
+        `O Spotify não respondeu a tempo (erro ${r.status} no servidor dele, "Bad gateway"). ` +
+        (isPlayer ? 'Costuma ser o app do Spotify no iPad adormecido ou sem internet. ' : '') +
+        'Não é defeito do painel; tente de novo em instantes.' +
+        raw(r.status, msg, reason), 'GATEWAY');
     if(r.status === 429)
       throw new SpotifyError('Muitos comandos seguidos. Aguarde alguns segundos.', 'RATE');
     throw new SpotifyError(msg + raw(r.status, msg, reason), String(r.status));

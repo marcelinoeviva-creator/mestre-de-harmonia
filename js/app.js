@@ -24,7 +24,7 @@ let pedido = null;        // { id, trackId, titulo, confirmado, incerto, antes, 
    resposta. Existe para diagnosticar no iPad de verdade: uma foto dele
    mostra se o pedido chegou, se a música começou, quando, e se o próprio
    painel estava com o áudio do aparelho no instante do toque. */
-const VERSAO = '11/11-a';   // aparece em Ajustes e no resumo de falha: diz qual versão está no iPad
+const VERSAO = '11/11-b';   // aparece em Ajustes e no resumo de falha: diz qual versão está no iPad
 const registro = [];
 let t0Pedido = 0;
 function reg(msg){
@@ -277,7 +277,7 @@ async function spCommand(kind){
     setTimeout(pollSpotify, 350);
   }catch(e){
     // Sem aparelho, ▶ só funciona trazendo o Spotify à frente.
-    if(e.code === 'NO_DEVICE' && kind === 'resume'){
+    if((e.code === 'NO_DEVICE' || e.code === 'GATEWAY') && kind === 'resume'){
       if(A.isPlaying('A') || A.isPlaying('B'))
         return alerta('O Spotify adormeceu. Abrir o Spotify agora pararia os decks A/B.', [
           { label:'Abrir o Spotify', primaria:true, onClick: () => SP.abrirApp() }]);
@@ -475,7 +475,7 @@ async function playTrack(t){
     const porque = st.settings.modoSpotify === 'link'
       ? 'em Ajustes está marcado "Sempre abrir o app do Spotify"'
       : !SP.connected() ? 'o Spotify não está conectado (veja a luz no topo)'
-      : spFault ? 'o Spotify recusou o acesso (veja a luz no topo)'
+      : spFault ? (spInstavel ? 'o Spotify está fora do ar por instantes; o painel tenta de novo sozinho' : 'o Spotify recusou o acesso (veja a luz no topo)')
       : spProfile?.product === 'free' ? 'conta grátis não aceita comando pelo painel'
       : 'a conexão com o Spotify ainda está sendo verificada';
     registrarMotivo(porque);
@@ -541,6 +541,13 @@ async function tocarNoSpotify(t){
     }
   }catch(e){
     reg(`pedido recusado: ${e.code || ''} ${e.message}`);
+    /* 502 do Spotify: às vezes o comando chega ao iPad mesmo assim.
+       Em vez de largar um erro solto, confere se a peça começou — e, se
+       não, o aviso de sempre leva o resumo com a versão. */
+    if(e.code === 'GATEWAY' && pedido){
+      pedido.via += ' (Spotify 502)';
+      return conferirInicio(t);
+    }
     pedido = null; marcarLinhasAoVivo(); paintSpotify();
     if(e.code === 'NO_DEVICE') return abrirNoSpotify(t, 'O Spotify estava adormecido. Abrindo para tocar…');
     return toast(e.message, true);
@@ -910,6 +917,8 @@ function openImport(){
 let spProfile = null;    // { display_name, product } quando a API responde de fato
 let spFault = '';        // motivo, quando o token existe mas a API recusa
 let spChecking = false;  // teste em andamento
+let spInstavel = false;  // a falha foi do servidor do Spotify (502/tempo): passa sozinha
+let spReteste = null;
 
 /* A API só é consultada a cada 5s. Guardar a posição e o instante em
    que ela chegou deixa a barra correr suave nesse meio-tempo, em vez
@@ -936,6 +945,7 @@ async function initSpotify(){
   // estado mais provavelmente mudou: confere na hora.
   document.addEventListener('visibilitychange', () => {
     if(document.hidden) return;
+    if(spFault && spInstavel && !spChecking) return checkSpotify().then(ok => ok && pollSpotify());
     pollSpotify();
   });
 }
@@ -950,12 +960,18 @@ async function checkSpotify(){
     // Se a rede engasgar, não deixa a interface presa em "Verificando…".
     spProfile = await Promise.race([
       SP.me(st.settings.clientId),
-      new Promise((_, rej) => setTimeout(() => rej(new Error('O Spotify não respondeu. Verifique a internet e toque em "Testar de novo".')), 12000))
+      new Promise((_, rej) => setTimeout(() => rej(Object.assign(new Error('O Spotify não respondeu a tempo. Verifique a internet.'), { code:'GATEWAY' })), 12000))
     ]);
     SP.auth.userId = spProfile?.id || '';     // permite marcar quais playlists são suas
+    spInstavel = false;
     return true;
   }catch(e){
-    spFault = e.message;
+    /* Falha passageira do Spotify (502/503/tempo) não pode deixar o canal S
+       travado até alguém achar o "Testar de novo": testa sozinho de novo. */
+    spInstavel = e.code === 'GATEWAY';
+    spFault = e.message + (spInstavel ? ' O painel está tentando de novo sozinho.' : '') + ` [v${VERSAO}]`;
+    if(spInstavel && !spReteste)
+      spReteste = setTimeout(() => { spReteste = null; if(spFault) checkSpotify().then(ok => ok && pollSpotify()); }, 15000);
     return false;
   }finally{
     spChecking = false;
@@ -1021,7 +1037,7 @@ function paintSpotify(){
     label_ = st.settings.clientId ? 'Toque para conectar' : 'Modo link';
     cls = st.settings.clientId ? 'chip-warn' : 'chip-off';
   }else if(spChecking){ label_ = 'Verificando…';       cls = 'chip-warn'; }
-  else if(spFault){     label_ = 'Spotify bloqueado';  cls = 'chip-warn'; }
+  else if(spFault){     label_ = spInstavel ? 'Spotify instável' : 'Spotify bloqueado';  cls = 'chip-warn'; }
   else if(working){     label_ = spProfile.product === 'free' ? 'Spotify (grátis)' : 'Spotify'; cls = 'chip-on'; }
   else{                 label_ = 'Toque para conectar'; cls = 'chip-warn'; }
 
@@ -1031,8 +1047,8 @@ function paintSpotify(){
   faders.S?.enable(spCanControl());
 
   if(logged && spFault){
-    $('#spTitle').textContent = 'Spotify recusou o acesso';
-    $('#spDevice').textContent = 'toque na luz acima para ver o motivo';
+    $('#spTitle').textContent = spInstavel ? 'Spotify fora do ar por instantes' : 'Spotify recusou o acesso';
+    $('#spDevice').textContent = spInstavel ? 'tentando de novo sozinho…' : 'toque na luz acima para ver o motivo';
     spPos = { ms:0, dur:0, at:0, playing:false };
     return;
   }
