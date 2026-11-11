@@ -24,7 +24,7 @@ let pedido = null;        // { id, trackId, titulo, confirmado, incerto, antes, 
    resposta. Existe para diagnosticar no iPad de verdade: uma foto dele
    mostra se o pedido chegou, se a música começou, quando, e se o próprio
    painel estava com o áudio do aparelho no instante do toque. */
-const VERSAO = '06/10-c';   // aparece em Ajustes e no resumo de falha: diz qual versão está no iPad
+const VERSAO = '11/11-a';   // aparece em Ajustes e no resumo de falha: diz qual versão está no iPad
 const registro = [];
 let t0Pedido = 0;
 function reg(msg){
@@ -61,6 +61,7 @@ async function boot(){
   document.addEventListener('pointerdown', () => { if(!A.ready() && temArquivo()) A.unlock(); });
   document.addEventListener('pointerdown', () => S.persistir(), { once: true });
   for(const alvo of ['A','B','M']) A.setLevel(alvo, (st.settings.volumes[alvo] ?? 80) / 100);
+  A.modoMistura(st.settings.somDecks !== 'exclusivo');
   S.persistir();
 
   A.onEnded(id => { paintDeck(id); marcarLinhasAoVivo(); });
@@ -274,7 +275,17 @@ async function spCommand(kind){
     if(kind === 'resume') await SP.resume(cid);
     if(kind === 'recomecar') await SP.seek(cid, 0);
     setTimeout(pollSpotify, 350);
-  }catch(e){ toast(e.message, true); }
+  }catch(e){
+    // Sem aparelho, ▶ só funciona trazendo o Spotify à frente.
+    if(e.code === 'NO_DEVICE' && kind === 'resume'){
+      if(A.isPlaying('A') || A.isPlaying('B'))
+        return alerta('O Spotify adormeceu. Abrir o Spotify agora pararia os decks A/B.', [
+          { label:'Abrir o Spotify', primaria:true, onClick: () => SP.abrirApp() }]);
+      toast('O Spotify estava adormecido. Abrindo…');
+      return SP.abrirApp();
+    }
+    toast(e.message, true);
+  }
 }
 
 /* ═══════════ Momentos ═══════════ */
@@ -1172,6 +1183,12 @@ function openSettings(){
     el('option', { value:'link', selected: st.settings.modoSpotify === 'link' ? '' : null },
       'Sempre abrir o app do Spotify')
   );
+  const somDecks = el('select', {},
+    el('option', { value:'misturar', selected: st.settings.somDecks !== 'exclusivo' ? '' : null },
+      'Misturar com o Spotify (recomendado)'),
+    el('option', { value:'exclusivo', selected: st.settings.somDecks === 'exclusivo' ? '' : null },
+      'Exclusivo: toca no silencioso, mas pausa o Spotify')
+  );
   const seNao = el('select', {},
     el('option', { value:'abrir', selected: st.settings.seNaoComecar !== 'avisar' ? '' : null },
       'Abrir o Spotify para tocar'),
@@ -1197,7 +1214,8 @@ function openSettings(){
   const body = el('div', {},
     el('div', { class:'notice', html:
       '<strong>Sobreposição de duas faixas:</strong> o Spotify comanda um player só — não existe forma de tocar duas músicas dele ao mesmo tempo. ' +
-      'Para a trilha entrar por baixo da outra, a peça precisa ter <strong>arquivo de áudio</strong> e ir para os decks A/B. ' +
+      'Para a trilha entrar por baixo da outra, a peça precisa ter <strong>arquivo de áudio</strong> e ir para os decks A/B — ' +
+      'que, com "Som dos decks" em misturar, tocam junto com o Spotify. ' +
       'Usando só Spotify, a única sobreposição possível é o <em>crossfade</em> dele: app do Spotify → Ajustes → Reprodução → Crossfade (até 12s).' }),
 
     el('h4', { style:'margin:20px 0 10px;color:var(--gold)' }, 'Conexão com o Spotify (opcional)'),
@@ -1226,6 +1244,13 @@ function openSettings(){
       el('p', { class:'hint' },
         'Toca um bipe de 1 segundo pelo mesmo caminho dos decks A e B. Serve para separar problema de arquivo de problema de som.')),
     el('div', { class:'field', style:'margin-top:16px' },
+      el('label', {}, 'Som dos decks A/B'), somDecks,
+      el('p', { class:'hint' },
+        'Misturar: os decks tocam junto com o Spotify, que nunca é pausado por eles — é o que permite passar de um deck ' +
+        'para uma peça do Spotify sem travar. O modo silencioso do iPad (o sino na Central de Controle) emudece os decks: ' +
+        'deixe-o desligado. Exclusivo: os decks tocam até no silencioso, mas cada vez que um deles começa o iPad pausa o ' +
+        'Spotify, e a peça seguinte do Spotify pode abrir o app.')),
+    el('div', { class:'field' },
       el('label', {}, 'Como tocar as peças do Spotify'), modoSp,
       el('p', { class:'hint' },
         'Comandar daqui mantém você no painel: a peça acende na hora e o app confere por trás. ' +
@@ -1263,6 +1288,8 @@ function openSettings(){
       st.settings.openInApp = openApp.value === 'app';
       st.settings.modoSpotify = modoSp.value;
       st.settings.seNaoComecar = seNao.value;
+      st.settings.somDecks = somDecks.value;
+      A.modoMistura(somDecks.value !== 'exclusivo');
       S.save(); paintSpotify(); c();
     }}]
   });
@@ -1414,6 +1441,10 @@ function tick(){
   if(somNoAr !== tick.acordado){ tick.acordado = somNoAr; A.keepAwake(somNoAr); }
   if(anyPlaying !== tick.last){
     tick.last = anyPlaying;
+    if(anyPlaying && A.misturando() && !tick.lembrou){
+      tick.lembrou = true;
+      toast('Deck tocando junto com o Spotify. Se não sair som, desligue o modo silencioso do iPad (Central de Controle, o sino).');
+    }
     paintDeck('A'); paintDeck('B'); marcarLinhasAoVivo();
   }
 }
