@@ -55,7 +55,7 @@
   menuBtn.addEventListener('click', () => abrirMenu(!menuAberto));
   $$('a', menu).forEach(a => a.addEventListener('click', () => abrirMenu(false)));
   addEventListener('keydown', e => { if(e.key === 'Escape' && menuAberto){ abrirMenu(false); menuBtn.focus(); } });
-  addEventListener('resize', () => { if(menuAberto && largo()) abrirMenu(false); });
+  addEventListener('resize', () => { if(menuAberto && innerWidth >= 1180) abrirMenu(false); });
 
   /* ─── Seção atual: trilho lateral e menu do topo ─ */
 

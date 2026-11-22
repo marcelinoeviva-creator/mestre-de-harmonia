@@ -210,12 +210,14 @@ strong{ color:var(--branco); font-weight:500 }
 }
 .menu-movel small{ font: 500 .7rem var(--sans); letter-spacing:.2em; color:var(--ouro) }
 
-@media (min-width: 1000px){
+@media (min-width: 1180px){
   .nav{ display:flex }
   .topo-cta{ margin-left:0 }
   .menu-btn{ display:none }
   .menu-movel{ display:none !important }
 }
+@media (min-width: 561px) and (max-width: 1179px){ .menu-btn{ margin-left:14px } }
+.nav a, .marca-nome, .btn{ white-space:nowrap }
 @media (max-width: 560px){ .topo-cta{ display:none } .menu-btn{ margin-left:auto } }
 
 /* ─── Aparelhos ─────────────────────────────── */
@@ -370,6 +372,10 @@ strong{ color:var(--branco); font-weight:500 }
   .nota-b::before{ left:-5.5px; top:-5.5px }
   .nota-b span{ left:40px; top:26px }
   .nota-b span::before{ left:-40px; top:-14px; width:44px; transform:rotate(35deg); transform-origin:left }
+}
+@media (min-width: 1000px) and (max-width: 1279px){
+  .hero-grade{ gap:64px }
+  .hero-celular{ left:4%; width:21% }
 }
 @media (max-width: 999px){
   .hero{ padding-bottom:130px }
