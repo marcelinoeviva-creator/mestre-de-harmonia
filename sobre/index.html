@@ -1,467 +1,835 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Mestre de Harmonia — painel de música para sessões maçônicas</title>
-<meta name="description" content="Aplicativo para o Mestre de Harmonia conduzir a música da sessão: roteiro por momento do ritual, links do Spotify e mesa de som de dois canais. Roda em iPad e Android.">
-<meta name="theme-color" content="#0a0f1c">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mestre de Harmonia — o painel de música da sessão maçônica</title>
+<meta name="description" content="Aplicativo para o Mestre de Harmonia conduzir a música dos trabalhos: o roteiro do ritual na ordem certa, cada peça a um toque e uma mesa de som sempre à mão. Funciona no iPad, iPhone, Android e computador, sem cadastro e sem servidor.">
+<meta name="theme-color" content="#090B0E">
+<link rel="canonical" href="https://marcelinoeviva-creator.github.io/mestre-de-harmonia/sobre/">
+<link rel="icon" href="../icons/icon-192.png">
+<link rel="apple-touch-icon" href="../icons/icon-180.png">
 
-<!-- Prévia ao compartilhar o link (WhatsApp, Telegram, e-mail, redes).
-     A imagem precisa de endereço absoluto: os aplicativos buscam a
-     página de fora, sem contexto do endereço atual. -->
 <meta property="og:type" content="website">
-<meta property="og:site_name" content="Mestre de Harmonia">
 <meta property="og:locale" content="pt_BR">
+<meta property="og:site_name" content="Mestre de Harmonia">
+<meta property="og:title" content="Mestre de Harmonia — a harmonia da sua Loja, em perfeita sintonia">
+<meta property="og:description" content="O painel de música da sessão: o roteiro do ritual na ordem certa, cada peça a um toque e uma mesa de som sempre à mão.">
 <meta property="og:url" content="https://marcelinoeviva-creator.github.io/mestre-de-harmonia/sobre/">
-<meta property="og:title" content="Mestre de Harmonia — painel de música para sessões maçônicas">
-<meta property="og:description" content="O roteiro do ritual na ordem certa, cada peça a um toque, e uma mesa de som para a trilha entrar por baixo antes da anterior acabar. iPad e Android, sem servidor e sem cadastro.">
-<meta property="og:image" content="https://marcelinoeviva-creator.github.io/mestre-de-harmonia/sobre/telas/compartilhar.jpg">
-<meta property="og:image:secure_url" content="https://marcelinoeviva-creator.github.io/mestre-de-harmonia/sobre/telas/compartilhar.jpg">
+<meta property="og:image" content="https://marcelinoeviva-creator.github.io/mestre-de-harmonia/sobre/assets/img/og.jpg">
+<meta property="og:image:secure_url" content="https://marcelinoeviva-creator.github.io/mestre-de-harmonia/sobre/assets/img/og.jpg">
 <meta property="og:image:type" content="image/jpeg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="Emblema da Loja ao lado do nome Mestre de Harmonia">
-
+<meta property="og:image:alt" content="Mestre de Harmonia: o painel do aplicativo num iPad">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Mestre de Harmonia — painel de música para sessões maçônicas">
-<meta name="twitter:description" content="O roteiro do ritual na ordem certa e uma mesa de som de dois canais. iPad e Android, sem servidor e sem cadastro.">
-<meta name="twitter:image" content="https://marcelinoeviva-creator.github.io/mestre-de-harmonia/sobre/telas/compartilhar.jpg">
+<meta name="twitter:image" content="https://marcelinoeviva-creator.github.io/mestre-de-harmonia/sobre/assets/img/og.jpg">
 
-<link rel="canonical" href="https://marcelinoeviva-creator.github.io/mestre-de-harmonia/sobre/">
-<link rel="icon" href="../icons/icon-192.png">
-<style>
-:root{
-  --bg:#080d18; --panel:#131d33; --panel2:#16203a; --line:#26314f; --line-hi:#3a4870;
-  --gold:#d4af37; --gold-hi:#f2dc95; --gold-dim:#8a7228;
-  --text:#eef2fb; --muted:#93a0bd; --spotify:#1db954;
-  --serif:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;
-  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","Helvetica Neue",sans-serif;
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Inter:wght@300;400;500;600&display=swap">
+<link rel="preload" as="image" href="assets/img/painel-palestra-1800.webp" imagesrcset="assets/img/painel-palestra-1000.webp 1000w, assets/img/painel-palestra-1800.webp 1800w" imagesizes="(min-width: 1000px) 56vw, 92vw">
+<link rel="stylesheet" href="assets/estilo.css">
+
+<script>
+  /* Esconde a primeira dobra só enquanto a animação de entrada não começa.
+     Se o script de movimento não carregar, a página aparece sozinha. */
+  (function(){
+    var reduz = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if(!reduz){
+      document.documentElement.classList.add('pre');
+      setTimeout(function(){ document.documentElement.classList.remove('pre'); }, 2600);
+    }
+  })();
+</script>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "Mestre de Harmonia",
+  "applicationCategory": "MultimediaApplication",
+  "operatingSystem": "iPadOS, iOS, Android, macOS, Windows (pelo navegador)",
+  "description": "Painel de música para sessões maçônicas: roteiro por momento do ritual, peças do Spotify ou arquivos de áudio e mesa de som de dois canais.",
+  "inLanguage": "pt-BR",
+  "creator": { "@type": "Organization", "name": "A∴R∴L∴S∴ Colunas de Pedras Grandes" }
 }
-*{box-sizing:border-box}
-html{scroll-behavior:smooth}
-body{
-  margin:0; background:
-    radial-gradient(1200px 700px at 50% -10%, #16224080, transparent 62%),
-    linear-gradient(180deg,var(--bg),#060a12 60%);
-  color:var(--text); font-family:var(--sans); font-size:17px; line-height:1.65;
-  -webkit-text-size-adjust:100%;
-}
-.wrap{max-width:940px; margin:0 auto; padding:0 22px}
-h1,h2,h3{font-family:var(--serif); font-weight:600; line-height:1.2; margin:0}
-h2{font-size:clamp(24px,4vw,32px); color:var(--gold-hi); margin-bottom:10px}
-h3{font-size:19px; color:var(--gold-hi); margin-bottom:6px}
-p{margin:0 0 16px}
-section{padding:56px 0; border-top:1px solid var(--line)}
-.muted{color:var(--muted)}
-strong{color:var(--gold-hi); font-weight:600}
-
-/* Topo */
-header{padding:64px 0 56px; text-align:center}
-/* O emblema é arte de traço escuro: vai sobre um medalhão claro para
-   ler no fundo escuro, como no próprio aplicativo. */
-.mark{
-  width:104px; height:104px; margin:0 auto 22px; display:block; padding:8px;
-  object-fit:contain; border-radius:50%;
-  background:radial-gradient(circle at 50% 42%, #fffdf6, #efe6d0);
-  border:2px solid var(--gold-dim);
-  box-shadow:0 0 0 1px #00000055, 0 6px 24px #0009;
-}
-.origem{
-  margin:12px 0 0; font-size:13px; letter-spacing:.08em; text-transform:uppercase;
-  color:var(--gold); font-weight:600;
-}
-.selo{display:flex; align-items:center; gap:18px; margin:0 0 22px}
-.selo img{
-  width:74px; height:74px; flex:0 0 auto; padding:6px; object-fit:contain; border-radius:50%;
-  background:radial-gradient(circle at 50% 42%, #fffdf6, #efe6d0); border:1.5px solid var(--gold-dim);
-}
-.selo div{font-size:15px; color:#c3cde5}
-.selo strong{display:block; font-family:var(--serif); font-size:18px; color:var(--gold-hi)}
-header h1{font-size:clamp(32px,6vw,50px); color:var(--gold-hi); letter-spacing:.01em}
-.tagline{font-size:clamp(17px,2.4vw,21px); color:var(--muted); max-width:620px; margin:14px auto 0}
-.plataformas{margin-top:26px; font-size:14.5px; color:var(--muted); letter-spacing:.04em}
-.plataformas span{display:inline-block; padding:5px 13px; margin:4px; border:1px solid var(--line-hi);
-  border-radius:999px; background:#0d1526}
-
-.cta{display:flex; gap:12px; justify-content:center; flex-wrap:wrap; margin-top:30px}
-.btn{display:inline-block; padding:14px 26px; border-radius:10px; text-decoration:none;
-  font-weight:600; font-size:16px}
-.btn-1{background:linear-gradient(180deg,#d9b845,#a8842a); color:#1a1305; border:1px solid #e8cf7a}
-.btn-2{background:var(--panel); color:var(--text); border:1px solid var(--line-hi)}
-
-/* Cartões */
-.grid{display:grid; gap:16px; grid-template-columns:repeat(auto-fit,minmax(250px,1fr))}
-.card{background:linear-gradient(180deg,var(--panel2),#111a2e); border:1px solid var(--line);
-  border-radius:14px; padding:22px}
-.card p{margin:0; font-size:15.5px; color:#c3cde5}
-
-/* Réplica da mesa */
-.console{background:linear-gradient(180deg,#0f1830,#0a0f1c); border:1px solid var(--line-hi);
-  border-radius:14px; padding:16px; display:grid; gap:12px;
-  grid-template-columns:1fr 130px 1fr; margin-top:8px}
-.ch{background:linear-gradient(180deg,#16203a,#111a2e); border:1px solid var(--line);
-  border-radius:12px; padding:10px; display:flex; flex-direction:column; gap:8px}
-.ch.sp{background:linear-gradient(180deg,#0f2a1c,#0c1a16); border-color:#1db95433}
-.ch-top{display:flex; align-items:center; gap:9px}
-.tag{width:26px; height:26px; border-radius:7px; display:grid; place-items:center; flex:0 0 auto;
-  font-family:var(--serif); font-size:14px; background:#0a1120; border:1px solid var(--gold-dim); color:var(--gold)}
-.ch.sp .tag{border-color:#1db95477; color:#5ee08c}
-.ch-name{font-size:12.5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
-.ch-time{font-size:11px; color:var(--muted)}
-.ch-mid{display:flex; gap:10px}
-.fader{width:44px; height:74px; border-radius:10px; background:linear-gradient(180deg,#060a13,#0d1526);
-  border:1px solid var(--line); position:relative; overflow:hidden; flex:0 0 auto}
-.fader i{position:absolute; left:0; right:0; bottom:0; height:70%;
-  background:linear-gradient(180deg,#d4af3755,#d4af3718); border-top:1px solid #d4af3766}
-.ch.sp .fader i{background:linear-gradient(180deg,#1db95455,#1db95418); border-top-color:#1db95488}
-.fader b{position:absolute; left:3px; right:3px; height:16px; bottom:calc(70% - 8px); border-radius:5px;
-  background:linear-gradient(180deg,#f2dc95,#a8842a); border:1px solid #f7e9b8}
-.ch.sp .fader b{background:linear-gradient(180deg,#7ff0ab,#158f42); border-color:#b6f8ce}
-.keys{flex:1; display:flex; flex-direction:column; gap:5px}
-.key{height:30px; border-radius:8px; background:#0d1526; border:1px solid var(--line);
-  display:grid; place-items:center; font-size:13px; color:var(--gold-hi)}
-.key.big{flex:1; font-size:19px}
-.keys .row{display:flex; gap:5px}
-.keys .row .key{flex:1}
-.bar{height:7px; border-radius:4px; border:1px solid var(--line);
-  background:linear-gradient(90deg,var(--gold) 38%, #0a1120 38%)}
-.ch.sp .bar{background:linear-gradient(90deg,var(--spotify) 52%, #071410 52%); border-color:#1db95444}
-.mid{background:linear-gradient(180deg,#141d33,#0d1424); border:1px solid var(--line-hi);
-  border-radius:12px; padding:10px; display:flex; flex-direction:column; gap:8px; align-items:center}
-.swap{width:100%; height:40px; border-radius:9px; background:linear-gradient(180deg,#2a3a63,#1b2745);
-  border:1px solid var(--line-hi); color:var(--gold-hi); display:grid; place-items:center;
-  font-size:14px; font-weight:600}
-.panic{width:100%; height:30px; border-radius:8px; background:#3a1717; border:1px solid #7a2c2c;
-  color:#ffb0ae; display:grid; place-items:center; font-size:11px; letter-spacing:.1em; font-weight:700}
-.legenda{font-size:13.5px; color:var(--muted); margin-top:12px; text-align:center}
-.tela{margin:22px 0 0}
-.tela img{width:100%; height:auto; display:block; border-radius:12px;
-  border:1px solid var(--line-hi); box-shadow:0 10px 40px #000a}
-.tela figcaption{font-size:13.5px; color:var(--muted); margin-top:11px; text-align:center}
-.aviso-lancamento{margin:22px auto 0; max-width:520px; font-size:14.5px; color:var(--gold);
-  border:1px solid var(--gold-dim); border-radius:10px; padding:11px 16px; background:#1a150633}
-
-/* Passos */
-ol.passos{counter-reset:p; list-style:none; padding:0; margin:0}
-ol.passos li{counter-increment:p; position:relative; padding-left:46px; margin-bottom:16px}
-ol.passos li::before{content:counter(p); position:absolute; left:0; top:-1px; width:31px; height:31px;
-  border-radius:50%; background:#0d1526; border:1px solid var(--gold-dim); color:var(--gold-hi);
-  display:grid; place-items:center; font-size:14px; font-weight:600}
-.duas{display:grid; gap:26px; grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}
-
-.nota{background:#1b2033; border-left:3px solid var(--gold); border-radius:8px;
-  padding:14px 16px; font-size:15px; color:#ccd6ea; margin:20px 0}
-ul.lista{margin:0 0 16px; padding-left:20px}
-ul.lista li{margin-bottom:9px; color:#c3cde5}
-.faq{border-top:1px solid var(--line); padding:18px 0}
-.faq:last-child{border-bottom:1px solid var(--line)}
-.faq h3{margin-bottom:4px}
-.faq p{margin:0; font-size:15.5px; color:#c3cde5}
-.preencher{color:var(--gold-hi); border-bottom:1px dashed var(--gold-dim)}
-
-footer{padding:44px 0 60px; text-align:center; color:var(--muted); font-size:14px;
-  border-top:1px solid var(--line)}
-footer a{color:var(--gold-hi)}
-@media (max-width:640px){
-  section{padding:44px 0}
-  .console{grid-template-columns:1fr; }
-}
-</style>
+</script>
 </head>
 <body>
 
-<header>
-  <div class="wrap">
-    <img class="mark" src="../icons/logo.png" alt="Emblema da A∴R∴L∴S∴ Colunas de Pedras Grandes">
-    <h1>Mestre de Harmonia</h1>
-    <p class="origem">A∴R∴L∴S∴ Colunas de Pedras Grandes · Loja mãe do aplicativo</p>
-    <p class="tagline">O painel de música da sessão. O roteiro do ritual na ordem certa,
-      cada peça a um toque, e uma mesa de som para a trilha entrar por baixo antes da anterior acabar.</p>
+<!-- Ícones (traço fino, desenhados à mão no estilo Lucide) -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-seta" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
+    <symbol id="i-baixo" viewBox="0 0 24 24"><path d="M12 5v14M6 13l6 6 6-6"/></symbol>
+    <symbol id="i-compartilhar" viewBox="0 0 24 24"><path d="M12 3v12M8 7l4-4 4 4"/><path d="M6 11H5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1h-1"/></symbol>
+    <symbol id="i-mais-quadrado" viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="17" height="17" rx="3.5"/><path d="M12 8v8M8 12h8"/></symbol>
+    <symbol id="i-pontos-v" viewBox="0 0 24 24"><circle cx="12" cy="5.5" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="12" cy="18.5" r="1.3"/></symbol>
+    <symbol id="i-pontos-h" viewBox="0 0 24 24"><circle cx="5.5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="18.5" cy="12" r="1.3"/></symbol>
+    <symbol id="i-instalar" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M12 7.5v5M9.8 10.5 12 12.7l2.2-2.2M8 20h8M12 16v4"/></symbol>
+    <symbol id="i-cadeado" viewBox="0 0 24 24"><rect x="5" y="10.5" width="14" height="10" rx="2"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/></symbol>
+    <symbol id="i-lista" viewBox="0 0 24 24"><path d="M10 6h10M10 12h10M10 18h10"/><path d="M4 6h1.5M4 12h1.5M4 18h1.5"/></symbol>
+    <symbol id="i-nota" viewBox="0 0 24 24"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/></symbol>
+    <symbol id="i-play" viewBox="0 0 24 24"><path d="M7 5.5v13l11-6.5z"/></symbol>
+    <symbol id="i-faders" viewBox="0 0 24 24"><path d="M6 3v18M12 3v18M18 3v18"/><rect x="3.5" y="13" width="5" height="3" rx="1"/><rect x="9.5" y="6" width="5" height="3" rx="1"/><rect x="15.5" y="10" width="5" height="3" rx="1"/></symbol>
+    <symbol id="i-escudo" viewBox="0 0 24 24"><path d="M12 3 5 6v5.5c0 4.4 3 8 7 9.5 4-1.5 7-5.1 7-9.5V6z"/><path d="m9 12 2.2 2.2L15.5 10"/></symbol>
+    <symbol id="i-sem-rede" viewBox="0 0 24 24"><path d="M2 8.8a16 16 0 0 1 4.4-2.6M9.8 5.2A16 16 0 0 1 22 8.8M5 12.3a11 11 0 0 1 3.4-2M14 10a11 11 0 0 1 5 2.3M8.5 15.8a6 6 0 0 1 7 0"/><circle cx="12" cy="19.5" r=".9"/><path d="m3 3 18 18"/></symbol>
+    <symbol id="i-busca" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.4-4.4"/></symbol>
+    <symbol id="i-tablet" viewBox="0 0 24 24"><rect x="4" y="2.5" width="16" height="19" rx="2.5"/><path d="M11 18.5h2"/></symbol>
+    <symbol id="i-celular" viewBox="0 0 24 24"><rect x="6.5" y="2.5" width="11" height="19" rx="2.5"/><path d="M11 18.5h2"/></symbol>
+    <symbol id="i-laptop" viewBox="0 0 24 24"><rect x="4.5" y="4.5" width="15" height="10.5" rx="1.5"/><path d="M2.5 19h19l-1.6-4H4.1z"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
+    <symbol id="i-esq" viewBox="0 0 24 24"><path d="m15 5-7 7 7 7"/></symbol>
+    <symbol id="i-dir" viewBox="0 0 24 24"><path d="m9 5 7 7-7 7"/></symbol>
+    <symbol id="i-lupa" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.4-4.4M11 8.5v5M8.5 11h5"/></symbol>
+    <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5.5M12 7.6v.2"/></symbol>
+    <symbol id="i-sino" viewBox="0 0 24 24"><path d="M6 16.5V11a6 6 0 0 1 12 0v5.5l1.5 2h-15z"/><path d="M10 20.5a2 2 0 0 0 4 0"/></symbol>
+    <symbol id="i-copia" viewBox="0 0 24 24"><path d="M12 3v11M8 10l4 4 4-4"/><path d="M4 15v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"/></symbol>
+    <symbol id="i-pedal" viewBox="0 0 24 24"><rect x="3" y="8" width="18" height="9" rx="2"/><path d="M8 12.5h3M14.5 11v3"/></symbol>
+  </defs>
+</svg>
 
-    <div class="plataformas">
-      <span>iPad</span><span>Tablet Android</span><span>Celular Android</span><span>Funciona sem internet</span><span>Sem servidor, sem cadastro</span>
-    </div>
+<a class="pular" href="#conteudo">Pular para o conteúdo</a>
 
-    <div class="cta">
-      <a class="btn btn-2" href="#instalar">Como funciona a instalação</a>
-    </div>
-    <p class="aviso-lancamento">Em fase final de testes na Loja mãe.
-      Disponível para as primeiras Lojas em breve.</p>
+<div class="progresso" aria-hidden="true"><span></span></div>
+
+<header class="topo" id="topo">
+  <div class="topo-faixa">
+    <a class="marca" href="#inicio" aria-label="Mestre de Harmonia, voltar ao início">
+      <span class="selo"><img src="../icons/logo.png" alt="" width="40" height="40"></span>
+      <span class="marca-nome">Mestre de Harmonia</span>
+    </a>
+    <nav class="nav" aria-label="Seções da página">
+      <a href="#aplicativo">O aplicativo</a>
+      <a href="#sessao">Na sessão</a>
+      <a href="#sigilo">Sigilo</a>
+      <a href="#galeria">Galeria</a>
+      <a href="#perguntas">Perguntas</a>
+    </nav>
+    <a class="btn btn-ouro btn-compacto topo-cta" href="#instalar"><span>Como instalar</span></a>
+    <button class="menu-btn" type="button" aria-expanded="false" aria-controls="menu-movel">
+      <span class="menu-btn-linhas" aria-hidden="true"><i></i><i></i></span>
+      <span class="sr">Abrir o menu</span>
+    </button>
+  </div>
+  <div class="menu-movel" id="menu-movel" hidden>
+    <nav aria-label="Menu">
+      <a href="#aplicativo"><small>01</small>O aplicativo</a>
+      <a href="#sessao"><small>02</small>Na sessão</a>
+      <a href="#sigilo"><small>03</small>Sigilo</a>
+      <a href="#galeria"><small>04</small>Galeria</a>
+      <a href="#instalar"><small>05</small>Como instalar</a>
+      <a href="#perguntas"><small>06</small>Perguntas</a>
+    </nav>
   </div>
 </header>
 
-<section>
-  <div class="wrap">
-    <h2>O que ele resolve</h2>
-    <p class="muted">Conduzir a música de uma sessão com o celular na mão é procurar faixa no meio do
-      ritual, errar o momento e cortar o som na hora errada. O app resolve isso separando o repertório
-      pelos passos do seu ritual.</p>
+<nav class="trilho" aria-label="Posição na página">
+  <a href="#inicio" data-alvo="inicio"><span>Início</span></a>
+  <a href="#aplicativo" data-alvo="aplicativo"><span>O aplicativo</span></a>
+  <a href="#sessao" data-alvo="sessao"><span>Na sessão</span></a>
+  <a href="#sigilo" data-alvo="sigilo"><span>Sigilo</span></a>
+  <a href="#galeria" data-alvo="galeria"><span>Galeria</span></a>
+  <a href="#instalar" data-alvo="instalar"><span>Instalação</span></a>
+  <a href="#perguntas" data-alvo="perguntas"><span>Perguntas</span></a>
+</nav>
 
-    <div class="grid">
-      <div class="card">
-        <h3>Roteiro por momento</h3>
-        <p>Abertura, Cerimônia das Luzes, Cadeia de União, Encerramento… Você cria os momentos com os
-          nomes do <em>seu</em> ritual e põe as peças em cada um, na ordem.</p>
-      </div>
-      <div class="card">
-        <h3>Anotação de execução</h3>
-        <p>Cada peça guarda a sua deixa: “entrar no 3º golpe do malhete”, “cortar quando o Venerável
-          sentar”. Fica escrito na linha da música.</p>
-      </div>
-      <div class="card">
-        <h3>Mesa de dois canais</h3>
-        <p>Decks A e B com volume independente, fades e transição automática. É como a próxima trilha
-          entra por baixo antes de a primeira terminar.</p>
-      </div>
-      <div class="card">
-        <h3>Botão SILÊNCIO</h3>
-        <p>Corta tudo na hora, decks e Spotify. Para quando alguém pede a palavra e a música precisa
-          sumir naquele segundo.</p>
-      </div>
-    </div>
+<main id="conteudo">
+
+<!-- ═════════════════ PRIMEIRA DOBRA ═════════════════ -->
+<section class="hero" id="inicio" data-secao>
+  <div class="hero-fundo" aria-hidden="true">
+    <div class="luz luz-a"></div>
+    <div class="luz luz-b"></div>
+    <div class="holofote"></div>
+    <svg class="hero-geometria" viewBox="0 0 1200 900" preserveAspectRatio="xMidYMid slice">
+      <g class="circulos" fill="none">
+        <circle cx="820" cy="430" r="250"/>
+        <circle cx="820" cy="430" r="340"/>
+        <circle cx="820" cy="430" r="440"/>
+      </g>
+      <g class="pauta" fill="none">
+        <path d="M-40 640 C 260 560, 520 720, 820 610 S 1180 520, 1260 560"/>
+        <path d="M-40 664 C 260 584, 520 744, 820 634 S 1180 544, 1260 584"/>
+        <path d="M-40 688 C 260 608, 520 768, 820 658 S 1180 568, 1260 608"/>
+        <path d="M-40 712 C 260 632, 520 792, 820 682 S 1180 592, 1260 632"/>
+        <path d="M-40 736 C 260 656, 520 816, 820 706 S 1180 616, 1260 656"/>
+      </g>
+    </svg>
+    <div class="grao"></div>
   </div>
-</section>
 
-<section>
-  <div class="wrap">
-    <h2>A mesa de som</h2>
-    <p class="muted">Sempre visível no rodapé, sem menu nem submenu. Os três canais ficam à mão durante
-      toda a sessão.</p>
-
-    <figure class="tela">
-      <img src="telas/painel.png" alt="Tela do aplicativo em uso na Loja mãe: momentos do ritual à esquerda, peça do momento ao centro, a próxima peça logo abaixo e a mesa de som no rodapé, com o deck A e o Spotify tocando" loading="lazy">
-      <figcaption>Os momentos do ritual à esquerda, as peças daquele momento ao centro e a mesa de
-        som sempre visível no rodapé. Canais A e B para arquivos, canal S para o Spotify.</figcaption>
-    </figure>
-  </div>
-</section>
-
-<section>
-  <div class="wrap">
-    <h2>As duas fontes de som</h2>
-    <p class="muted">Isto é o ponto mais importante de entender antes de usar, e não escondemos:</p>
-
-    <div class="duas">
-      <div>
-        <h3>Spotify — o seu repertório</h3>
-        <p>Você cola o link da faixa e o nome é preenchido sozinho. Um toque toca.</p>
-        <p><strong>O Spotify comanda um player só.</strong> Não existe forma — em aplicativo nenhum,
-          de ninguém — de tocar duas músicas dele ao mesmo tempo. A API não permite e os termos proíbem.</p>
+  <div class="hero-grade embalagem">
+    <div class="hero-texto">
+      <p class="sobretitulo" data-intro="sobre"><span class="traco" aria-hidden="true"></span>Tecnologia a serviço da harmonia maçônica</p>
+      <h1 class="hero-titulo">
+        <span class="mascara"><span class="linha" data-intro="linha">A harmonia</span></span>
+        <span class="mascara"><span class="linha" data-intro="linha">da sua Loja.</span></span>
+        <span class="mascara"><em class="linha" data-intro="linha">Em perfeita sintonia.</em></span>
+      </h1>
+      <p class="hero-sub" data-intro="sub">Uma ferramenta feita para o Mestre de Harmonia conduzir a música dos trabalhos: o roteiro do ritual na ordem certa, cada peça a um toque e uma mesa de som sempre à mão.</p>
+      <div class="hero-acoes" data-intro="acoes">
+        <a class="btn btn-ouro" href="#aplicativo" data-ima><span>Conheça o aplicativo</span><svg class="ic" aria-hidden="true"><use href="#i-seta"/></svg></a>
+        <a class="btn btn-linha" href="#instalar" data-ima><span>Como instalar</span></a>
       </div>
-      <div>
-        <h3>Arquivos — a sobreposição real</h3>
-        <p>Peças com arquivo (MP3, M4A, WAV) vão para os decks A e B e <strong>tocam juntas, com volume
-          independente</strong>. É a única forma de cruzar duas trilhas.</p>
-        <p>Não precisa converter o repertório inteiro: bastam as poucas peças que você realmente
-          sobrepõe. O resto segue no Spotify.</p>
-      </div>
+      <ul class="hero-selos" data-intro="selos" aria-label="Destaques">
+        <li><svg class="ic" aria-hidden="true"><use href="#i-tablet"/></svg>iPad e iPhone</li>
+        <li><svg class="ic" aria-hidden="true"><use href="#i-celular"/></svg>Android</li>
+        <li><svg class="ic" aria-hidden="true"><use href="#i-laptop"/></svg>Computador</li>
+        <li><svg class="ic" aria-hidden="true"><use href="#i-sem-rede"/></svg>Funciona sem internet</li>
+        <li><svg class="ic" aria-hidden="true"><use href="#i-cadeado"/></svg>Sem cadastro</li>
+      </ul>
     </div>
 
-    <div class="nota">Usando apenas Spotify, a única sobreposição possível é o crossfade dele:
-      <em>Spotify → Ajustes → Reprodução → Crossfade</em>, até 12 segundos.</div>
+    <div class="hero-palco" data-palco>
+      <div class="palco-giro" data-giro>
+        <figure class="aparelho tablet hero-tablet" data-intro="tablet">
+          <div class="tela" data-intro="tela">
+            <img src="assets/img/painel-palestra-1800.webp"
+                 srcset="assets/img/painel-palestra-1000.webp 1000w, assets/img/painel-palestra-1800.webp 1800w"
+                 sizes="(min-width: 1000px) 56vw, 92vw" width="1800" height="1251"
+                 alt="O painel do Mestre de Harmonia num iPad: momentos do ritual à esquerda, as peças do momento ao centro, a próxima peça na barra logo abaixo e a mesa de som no rodapé, com o deck A e o Spotify tocando"
+                 fetchpriority="high">
+            <span class="reflexo" aria-hidden="true"></span>
+          </div>
+        </figure>
+        <figure class="aparelho celular hero-celular" data-intro="celular">
+          <div class="tela">
+            <img src="assets/img/celular-420.webp" srcset="assets/img/celular-420.webp 420w, assets/img/celular-700.webp 700w"
+                 sizes="190px" width="420" height="909" alt="O mesmo painel aberto num celular" loading="eager">
+            <span class="reflexo" aria-hidden="true"></span>
+          </div>
+        </figure>
+        <p class="nota-tela nota-a" data-intro="nota" aria-hidden="true"><span>A próxima peça, a um toque</span></p>
+        <p class="nota-tela nota-b" data-intro="nota" aria-hidden="true"><span>Mesa de som sempre visível</span></p>
+      </div>
+      <div class="sombra-chao" aria-hidden="true"></div>
+    </div>
+  </div>
+
+  <a class="rolar" href="#aplicativo" data-intro="rolar"><span>Role para conhecer</span><i aria-hidden="true"></i></a>
+</section>
+
+<!-- Faixa de passagem -->
+<div class="faixa" aria-hidden="true">
+  <div class="faixa-trilho">
+    <span>Roteiro por momento</span><b>✦</b><span>Anotação de execução</span><b>✦</b><span>Barra de deixas</span><b>✦</b><span>Decks A e B</span><b>✦</b><span>Transição A ⇄ B</span><b>✦</b><span>Botão Silêncio</span><b>✦</b><span>Spotify e arquivos</span><b>✦</b><span>Sem servidor</span><b>✦</b>
+    <span>Roteiro por momento</span><b>✦</b><span>Anotação de execução</span><b>✦</b><span>Barra de deixas</span><b>✦</b><span>Decks A e B</span><b>✦</b><span>Transição A ⇄ B</span><b>✦</b><span>Botão Silêncio</span><b>✦</b><span>Spotify e arquivos</span><b>✦</b><span>Sem servidor</span><b>✦</b>
+  </div>
+</div>
+
+<!-- ═════════════════ O APLICATIVO ═════════════════ -->
+<section class="secao aplicativo" id="aplicativo" data-secao>
+  <div class="embalagem">
+    <header class="cabeca cabeca-dividida">
+      <p class="sobretitulo"><span class="traco" aria-hidden="true"></span>O aplicativo</p>
+      <h2 class="titulo" data-palavras>Tudo o que a sessão pede. <em>Nada que a distraia.</em></h2>
+      <p class="lede" data-sobe>Nasceu de uma necessidade real de sessão na A∴R∴L∴S∴ Colunas de Pedras Grandes, onde é usado nos trabalhos. Cada recurso responde a um momento concreto de quem cuida da harmonia.</p>
+    </header>
+
+    <article class="recurso" data-recurso>
+      <div class="recurso-texto">
+        <span class="recurso-num" aria-hidden="true">01</span>
+        <p class="recurso-rotulo"><svg class="ic" aria-hidden="true"><use href="#i-lista"/></svg>Roteiro por momento</p>
+        <h3 data-palavras>Os passos do seu ritual, na ordem em que acontecem.</h3>
+        <p>Você cria os momentos com os nomes do seu ritual e coloca em cada um as peças daquele trecho. O aplicativo já vem com doze momentos de uma sessão como ponto de partida, para renomear, reordenar ou apagar.</p>
+        <ul class="tracos">
+          <li>Renomear e reordenar com um toque</li>
+          <li>Momento sem peça não fura a ordem do ritual</li>
+        </ul>
+      </div>
+      <figure class="recurso-midia">
+        <div class="janela" data-revela>
+          <img src="assets/img/momentos-1200.webp" srcset="assets/img/momentos-700.webp 700w, assets/img/momentos-1200.webp 1200w"
+               sizes="(min-width: 1000px) 42vw, 92vw" width="1200" height="1295" loading="lazy" decoding="async"
+               alt="Janela Organizar momentos, com a lista dos momentos do roteiro e os botões para subir, descer, renomear e apagar">
+        </div>
+        <figcaption>Organizar momentos</figcaption>
+      </figure>
+    </article>
+
+    <article class="recurso recurso-inverso" data-recurso>
+      <div class="recurso-texto">
+        <span class="recurso-num" aria-hidden="true">02</span>
+        <p class="recurso-rotulo"><svg class="ic" aria-hidden="true"><use href="#i-nota"/></svg>A peça e a sua deixa</p>
+        <h3 data-palavras>Cada música sabe a hora de entrar.</h3>
+        <p>Cole o link do Spotify e o nome é preenchido sozinho. Na anotação de execução fica a sua deixa, como “entrar no 3º golpe do malhete” ou “cortar quando o Venerável sentar”, escrita na linha da própria música.</p>
+        <ul class="tracos">
+          <li>Vários links colados de uma vez viram várias peças</li>
+          <li>Arquivo de áudio opcional: MP3, M4A ou WAV</li>
+        </ul>
+      </div>
+      <figure class="recurso-midia">
+        <div class="janela" data-revela>
+          <img src="assets/img/editar-peca-1200.webp" srcset="assets/img/editar-peca-700.webp 700w, assets/img/editar-peca-1200.webp 1200w"
+               sizes="(min-width: 1000px) 42vw, 92vw" width="1200" height="1295" loading="lazy" decoding="async"
+               alt="Janela Editar peça, com os campos Momento, Link do Spotify, Nome da peça, Compositor, Anotação de execução e Arquivo de áudio">
+        </div>
+        <figcaption>Cadastro de uma peça</figcaption>
+      </figure>
+    </article>
+
+    <article class="recurso recurso-largo" data-recurso>
+      <div class="recurso-texto">
+        <span class="recurso-num" aria-hidden="true">03</span>
+        <p class="recurso-rotulo"><svg class="ic" aria-hidden="true"><use href="#i-play"/></svg>Barra de deixas</p>
+        <h3 data-palavras>A próxima peça, sempre à vista.</h3>
+        <p>O roteiro inteiro vira uma fila, na ordem da sessão. A barra mostra a próxima peça e a seguinte; um toque em <strong>TOCAR</strong> executa e já avança. Também funciona pelo teclado ou por um pedal Bluetooth de virar página, para conduzir sem olhar para a tela.</p>
+      </div>
+      <figure class="recurso-midia composicao-deixas">
+        <div class="janela janela-fundo" data-revela>
+          <img src="assets/img/painel-tronco-1800.webp" srcset="assets/img/painel-tronco-1000.webp 1000w, assets/img/painel-tronco-1800.webp 1800w"
+               sizes="(min-width: 1000px) 70vw, 92vw" width="1800" height="1251" loading="lazy" decoding="async"
+               alt="Painel com a barra de deixas acima da mesa de som">
+        </div>
+        <div class="tira" data-tira>
+          <img src="assets/img/barra-de-deixas-2200.webp" srcset="assets/img/barra-de-deixas-1200.webp 1200w, assets/img/barra-de-deixas-2200.webp 2200w"
+               sizes="(min-width: 1000px) 78vw, 100vw" width="2200" height="112" loading="lazy" decoding="async"
+               alt="A barra de deixas em detalhe: Próxima, o nome do momento, a peça, a peça seguinte e o botão TOCAR">
+        </div>
+        <figcaption>A barra de deixas, em destaque sobre o painel</figcaption>
+      </figure>
+    </article>
+
+    <article class="recurso recurso-largo recurso-mesa" data-recurso>
+      <div class="recurso-texto">
+        <span class="recurso-num" aria-hidden="true">04</span>
+        <p class="recurso-rotulo"><svg class="ic" aria-hidden="true"><use href="#i-faders"/></svg>Mesa de som</p>
+        <h3 data-palavras>Uma mesa de som, não uma lista de músicas.</h3>
+        <p>Dois decks, A e B, com volume independente, fader mestre e fades de entrada e saída. A transição A ⇄ B sobe uma faixa enquanto a outra desce, em 3, 5, 8 ou 12 segundos. E o botão <strong>SILÊNCIO</strong> corta tudo naquele segundo, decks e Spotify.</p>
+      </div>
+      <figure class="recurso-midia">
+        <div class="janela janela-mesa" data-revela>
+          <img src="assets/img/mesa-de-som-2000.webp" srcset="assets/img/mesa-de-som-1100.webp 1100w, assets/img/mesa-de-som-2000.webp 2000w"
+               sizes="(min-width: 1000px) 84vw, 100vw" width="2000" height="449" loading="lazy" decoding="async"
+               alt="A mesa de som: deck A tocando o hino de abertura, fader mestre com o botão de transição A e B e o botão Silêncio, deck B vazio e o canal S do Spotify tocando">
+        </div>
+        <ol class="legenda-mesa" aria-label="Partes da mesa">
+          <li><b>A</b>Deck A</li>
+          <li><b>M</b>Mestre, transição e Silêncio</li>
+          <li><b>B</b>Deck B</li>
+          <li><b>S</b>Spotify</li>
+        </ol>
+      </figure>
+    </article>
+
+    <article class="recurso" data-recurso>
+      <div class="recurso-texto">
+        <span class="recurso-num" aria-hidden="true">05</span>
+        <p class="recurso-rotulo"><svg class="ic" aria-hidden="true"><use href="#i-nota"/></svg>Spotify e arquivos</p>
+        <h3 data-palavras>O acervo do Spotify. A precisão dos arquivos.</h3>
+        <p>As peças do Spotify tocam com um toque. Com conta Premium, o canal S comanda o Spotify sem sair do painel, com o volume dele no fader e a escolha do aparelho onde o som sai. Para uma trilha entrar por baixo da outra, as peças com arquivo vão para os decks A e B e tocam juntas.</p>
+        <p class="aviso-fino"><svg class="ic" aria-hidden="true"><use href="#i-info"/></svg>O Spotify comanda um player só: duas músicas dele ao mesmo tempo não existem em aplicativo nenhum. A sobreposição real é entre os decks.</p>
+      </div>
+      <figure class="recurso-midia recurso-midia-camadas">
+        <div class="janela" data-revela>
+          <img src="assets/img/saida-de-som-1200.webp" srcset="assets/img/saida-de-som-700.webp 700w, assets/img/saida-de-som-1200.webp 1200w"
+               sizes="(min-width: 1000px) 40vw, 92vw" width="1200" height="566" loading="lazy" decoding="async"
+               alt="Janela Saída de som do Spotify, com o iPad ativo e um iPhone disponível">
+        </div>
+        <div class="janela janela-sobreposta" data-revela>
+          <img src="assets/img/pecas-do-momento-1600.webp" srcset="assets/img/pecas-do-momento-900.webp 900w, assets/img/pecas-do-momento-1600.webp 1600w"
+               sizes="(min-width: 1000px) 40vw, 92vw" width="1600" height="283" loading="lazy" decoding="async"
+               alt="Duas peças do Spotify num momento, cada uma com os botões tocar, mandar para o deck A, para o deck B e editar">
+        </div>
+        <figcaption>Saída de som do Spotify e as peças do momento</figcaption>
+      </figure>
+    </article>
   </div>
 </section>
 
-<section id="instalar">
-  <div class="wrap">
-    <h2>Como instalar</h2>
-    <p class="muted">Não passa por App Store nem Play Store. Abre no navegador e vira ícone na tela
-      inicial, em tela cheia. Leva menos de um minuto.</p>
+<!-- ═════════════════ NA SESSÃO ═════════════════ -->
+<section class="secao sessao" id="sessao" data-secao>
+  <div class="embalagem">
+    <header class="cabeca">
+      <p class="sobretitulo"><span class="traco" aria-hidden="true"></span>Na sessão</p>
+      <h2 class="titulo" data-palavras>Uma experiência pensada para o <em>Mestre de Harmonia.</em></h2>
+      <p class="lede" data-sobe>Da preparação, antes de a Loja abrir os trabalhos, até o último acorde do encerramento.</p>
+    </header>
 
-    <div class="duas">
-      <div>
-        <h3>iPad e iPhone</h3>
-        <ol class="passos">
-          <li>Abra o endereço do app <strong>no Safari</strong>.</li>
-          <li>Toque em <strong>Compartilhar</strong>, o quadrado com a seta para cima.</li>
-          <li>Escolha <strong>Adicionar à Tela de Início</strong>.</li>
-          <li>Abra pelo ícone.</li>
+    <div class="percurso">
+      <div class="percurso-palco">
+        <figure class="aparelho tablet percurso-tablet">
+          <div class="tela">
+            <img src="assets/img/painel-balaustre-1800.webp" srcset="assets/img/painel-balaustre-1000.webp 1000w, assets/img/painel-balaustre-1800.webp 1800w"
+                 sizes="(min-width: 1000px) 52vw, 92vw" width="1800" height="1251" loading="lazy" decoding="async"
+                 alt="O painel do aplicativo; a área em destaque acompanha o texto ao lado">
+            <span class="foco" data-foco aria-hidden="true"></span>
+            <span class="reflexo" aria-hidden="true"></span>
+          </div>
+        </figure>
+        <ol class="percurso-marcas" aria-hidden="true">
+          <li class="ativa"></li><li></li><li></li><li></li><li></li>
         </ol>
       </div>
-      <div>
-        <h3>Android</h3>
+
+      <ol class="percurso-passos">
+        <li class="passo-percurso ativo" data-passo data-foco-area="momentos">
+          <span class="passo-quando">Antes da sessão</span>
+          <h3>Organização</h3>
+          <p>Prepare com calma, longe da pressa. Momentos, peças, deixas e arquivos ficam prontos antes de a Loja abrir os trabalhos, na ordem em que vão acontecer.</p>
+        </li>
+        <li class="passo-percurso" data-passo data-foco-area="deixas">
+          <span class="passo-quando">Na abertura</span>
+          <h3>Praticidade</h3>
+          <p>Um botão só. A barra mostra o que vem a seguir e o <strong>TOCAR</strong> executa e avança. Com um pedal Bluetooth, nem é preciso tocar na tela.</p>
+        </li>
+        <li class="passo-percurso" data-passo data-foco-area="mesa">
+          <span class="passo-quando">Durante os trabalhos</span>
+          <h3>Tudo à mão</h3>
+          <p>A mesa de som fica sempre visível no rodapé, sem menu nem submenu. Volume, transição e o botão Silêncio estão onde o dedo espera.</p>
+        </li>
+        <li class="passo-percurso" data-passo data-foco-area="spotify">
+          <span class="passo-quando">Diante do imprevisto</span>
+          <h3>Confiança</h3>
+          <p>Ao pedir uma peça, o painel confere se ela realmente começou e, se o Spotify não responder, abre a faixa nele em vez de deixar o templo em silêncio. Sem internet, roteiro e arquivos continuam. Enquanto houver som, a tela fica acesa.</p>
+        </li>
+        <li class="passo-percurso" data-passo data-foco-area="ajustes">
+          <span class="passo-quando">Depois da sessão</span>
+          <h3>Tranquilidade</h3>
+          <p>Em Ajustes, <strong>Exportar roteiro</strong> gera um arquivo com momentos, peças, links e anotações. Trocou de aparelho, é só importar. As atualizações chegam sozinhas.</p>
+        </li>
+      </ol>
+    </div>
+
+    <dl class="numeros" aria-label="O aplicativo em números">
+      <div><dt><span data-conta="12">12</span></dt><dd>momentos de sessão para começar</dd></div>
+      <div><dt><span data-conta="3">3</span></dt><dd>canais de som: A, B e Spotify</dd></div>
+      <div><dt><span data-conta="4">4</span></dt><dd>tempos de transição: 3, 5, 8 e 12 s</dd></div>
+      <div><dt><span data-conta="0">0</span></dt><dd>servidores e cadastros</dd></div>
+    </dl>
+  </div>
+</section>
+
+<!-- ═════════════════ SIGILO ═════════════════ -->
+<section class="secao sigilo" id="sigilo" data-secao>
+  <svg class="sigilo-geometria" viewBox="0 0 600 600" aria-hidden="true">
+    <circle cx="300" cy="300" r="290"/>
+    <circle cx="300" cy="300" r="210"/>
+    <circle cx="300" cy="300" r="130"/>
+    <circle class="ponto" cx="300" cy="300" r="5"/>
+  </svg>
+  <div class="embalagem">
+    <header class="cabeca cabeca-centro">
+      <p class="sobretitulo"><span class="traco" aria-hidden="true"></span>Sigilo<span class="traco" aria-hidden="true"></span></p>
+      <h2 class="titulo titulo-grande" data-palavras>O roteiro da Loja <em>não sai da Loja.</em></h2>
+      <p class="lede" data-sobe>Um aplicativo que guarda a sequência dos trabalhos precisa responder, antes de tudo, para onde vão esses dados. A resposta é simples: para lugar nenhum.</p>
+    </header>
+
+    <div class="pilares">
+      <div class="pilar" data-sobe>
+        <svg class="ic ic-grande" aria-hidden="true"><use href="#i-escudo"/></svg>
+        <h3>Sem servidor, sem cadastro</h3>
+        <p>Não há conta para criar, senha, banco de dados nem nuvem. O aplicativo roda inteiro dentro do aparelho.</p>
+      </div>
+      <div class="pilar" data-sobe>
+        <svg class="ic ic-grande" aria-hidden="true"><use href="#i-cadeado"/></svg>
+        <h3>Tudo fica no aparelho</h3>
+        <p>Momentos, ordem da sessão, anotações e arquivos de áudio ficam gravados só ali. Nenhuma Loja vê a outra, e nem quem desenvolveu tem acesso.</p>
+      </div>
+      <div class="pilar" data-sobe>
+        <svg class="ic ic-grande" aria-hidden="true"><use href="#i-nota"/></svg>
+        <h3>Ao Spotify, só a música</h3>
+        <p>Ao cadastrar e ao tocar, o Spotify recebe apenas qual faixa foi pedida, nunca o nome do momento, a ordem da sessão ou a anotação. Usando só arquivos, nada sai do aparelho.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════════════ GALERIA ═════════════════ -->
+<section class="secao galeria" id="galeria" data-secao>
+  <div class="embalagem">
+    <header class="cabeca cabeca-dividida">
+      <p class="sobretitulo"><span class="traco" aria-hidden="true"></span>Galeria</p>
+      <h2 class="titulo" data-palavras>O aplicativo, <em>tela por tela.</em></h2>
+      <p class="lede" data-sobe>Capturas reais do Mestre de Harmonia em uso na Loja mãe. Toque numa imagem para ampliar.</p>
+    </header>
+
+    <div class="mosaico">
+      <figure class="peca-galeria g-1" data-velocidade="0.04">
+        <button type="button" class="abre-lupa" data-lupa="assets/img/painel-balaustre-1800.webp" data-legenda="O painel durante a sessão: roteiro, peças do momento, barra de deixas e mesa de som.">
+          <span class="aparelho tablet"><span class="tela"><img src="assets/img/painel-balaustre-1000.webp" srcset="assets/img/painel-balaustre-1000.webp 1000w, assets/img/painel-balaustre-1800.webp 1800w" sizes="(min-width: 1000px) 60vw, 92vw" width="1000" height="695" loading="lazy" decoding="async" alt="O painel durante a sessão"></span></span>
+          <span class="lupa-icone" aria-hidden="true"><svg class="ic"><use href="#i-lupa"/></svg></span>
+        </button>
+        <figcaption>O painel durante a sessão</figcaption>
+      </figure>
+
+      <figure class="peca-galeria g-2" data-velocidade="-0.06">
+        <button type="button" class="abre-lupa" data-lupa="assets/img/ipad-em-pe-1100.webp" data-legenda="Com o iPad na vertical, o painel se reorganiza.">
+          <span class="aparelho tablet tablet-em-pe"><span class="tela"><img src="assets/img/ipad-em-pe-640.webp" srcset="assets/img/ipad-em-pe-640.webp 640w, assets/img/ipad-em-pe-1100.webp 1100w" sizes="(min-width: 1000px) 26vw, 60vw" width="640" height="921" loading="lazy" decoding="async" alt="O painel no iPad na vertical"></span></span>
+          <span class="lupa-icone" aria-hidden="true"><svg class="ic"><use href="#i-lupa"/></svg></span>
+        </button>
+        <figcaption>iPad na vertical</figcaption>
+      </figure>
+
+      <figure class="peca-galeria g-3" data-velocidade="0.08">
+        <button type="button" class="abre-lupa" data-lupa="assets/img/ajustes-1200.webp" data-legenda="Ajustes: conexão com o Spotify, diagnóstico, cópia de segurança e versão instalada.">
+          <span class="janela"><img src="assets/img/ajustes-700.webp" srcset="assets/img/ajustes-700.webp 700w, assets/img/ajustes-1200.webp 1200w" sizes="(min-width: 1000px) 30vw, 92vw" width="700" height="756" loading="lazy" decoding="async" alt="Janela de Ajustes"></span>
+          <span class="lupa-icone" aria-hidden="true"><svg class="ic"><use href="#i-lupa"/></svg></span>
+        </button>
+        <figcaption>Ajustes</figcaption>
+      </figure>
+
+      <figure class="peca-galeria g-4" data-velocidade="-0.03">
+        <button type="button" class="abre-lupa" data-lupa="assets/img/busca-1800.webp" data-legenda="Busca em todo o repertório, com cada resultado pronto para tocar.">
+          <span class="aparelho tablet"><span class="tela"><img src="assets/img/busca-1000.webp" srcset="assets/img/busca-1000.webp 1000w, assets/img/busca-1800.webp 1800w" sizes="(min-width: 1000px) 50vw, 92vw" width="1000" height="695" loading="lazy" decoding="async" alt="Busca de peças no painel"></span></span>
+          <span class="lupa-icone" aria-hidden="true"><svg class="ic"><use href="#i-lupa"/></svg></span>
+        </button>
+        <figcaption>Busca em todo o repertório</figcaption>
+      </figure>
+
+      <figure class="peca-galeria g-5" data-velocidade="-0.09">
+        <button type="button" class="abre-lupa" data-lupa="assets/img/celular-700.webp" data-legenda="No celular, o mesmo painel em tela menor.">
+          <span class="aparelho celular"><span class="tela"><img src="assets/img/celular-420.webp" srcset="assets/img/celular-420.webp 420w, assets/img/celular-700.webp 700w" sizes="(min-width: 1000px) 16vw, 44vw" width="420" height="909" loading="lazy" decoding="async" alt="O painel num celular"></span></span>
+          <span class="lupa-icone" aria-hidden="true"><svg class="ic"><use href="#i-lupa"/></svg></span>
+        </button>
+        <figcaption>No celular</figcaption>
+      </figure>
+
+      <figure class="peca-galeria g-6" data-velocidade="0.05">
+        <button type="button" class="abre-lupa" data-lupa="assets/img/painel-fechamento-1800.webp" data-legenda="Deck A e Spotify tocando juntos, com a próxima peça já indicada na barra.">
+          <span class="aparelho tablet"><span class="tela"><img src="assets/img/painel-fechamento-1000.webp" srcset="assets/img/painel-fechamento-1000.webp 1000w, assets/img/painel-fechamento-1800.webp 1800w" sizes="(min-width: 1000px) 44vw, 92vw" width="1000" height="695" loading="lazy" decoding="async" alt="Deck A e Spotify tocando juntos"></span></span>
+          <span class="lupa-icone" aria-hidden="true"><svg class="ic"><use href="#i-lupa"/></svg></span>
+        </button>
+        <figcaption>Deck A e Spotify tocando juntos</figcaption>
+      </figure>
+
+      <figure class="peca-galeria g-7" data-velocidade="-0.05">
+        <button type="button" class="abre-lupa" data-lupa="assets/img/editar-peca-1200.webp" data-legenda="Cadastro de uma peça: link, nome, compositor, anotação de execução e arquivo de áudio.">
+          <span class="janela"><img src="assets/img/editar-peca-700.webp" srcset="assets/img/editar-peca-700.webp 700w, assets/img/editar-peca-1200.webp 1200w" sizes="(min-width: 1000px) 26vw, 92vw" width="700" height="756" loading="lazy" decoding="async" alt="Janela Editar peça"></span>
+          <span class="lupa-icone" aria-hidden="true"><svg class="ic"><use href="#i-lupa"/></svg></span>
+        </button>
+        <figcaption>Cadastro de uma peça</figcaption>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════════════ INSTALAÇÃO ═════════════════ -->
+<section class="secao instalar" id="instalar" data-secao>
+  <div class="embalagem">
+    <header class="cabeca cabeca-dividida">
+      <p class="sobretitulo"><span class="traco" aria-hidden="true"></span>Instalação</p>
+      <h2 class="titulo" data-palavras>Instale em <em>menos de um minuto.</em></h2>
+      <p class="lede" data-sobe>O Mestre de Harmonia não passa por App Store nem Play Store. Ele abre no navegador e vira um ícone na tela inicial, em tela cheia, como qualquer aplicativo. Não pede conta, senha nem permissão especial.</p>
+    </header>
+
+    <p class="aviso-endereco" data-sobe><svg class="ic" aria-hidden="true"><use href="#i-info"/></svg>O endereço do aplicativo será enviado às Lojas na liberação. Com ele em mãos, siga os passos do seu aparelho.</p>
+
+    <div class="abas" data-abas>
+      <div class="abas-lista" role="tablist" aria-label="Escolha o aparelho">
+        <button role="tab" id="aba-apple" aria-controls="painel-apple" aria-selected="true"><svg class="ic" aria-hidden="true"><use href="#i-tablet"/></svg>iPad e iPhone</button>
+        <button role="tab" id="aba-android" aria-controls="painel-android" aria-selected="false" tabindex="-1"><svg class="ic" aria-hidden="true"><use href="#i-celular"/></svg>Android</button>
+        <button role="tab" id="aba-pc" aria-controls="painel-pc" aria-selected="false" tabindex="-1"><svg class="ic" aria-hidden="true"><use href="#i-laptop"/></svg>Computador</button>
+        <span class="abas-marcador" aria-hidden="true"></span>
+      </div>
+
+      <!-- iPad e iPhone -->
+      <div class="aba-painel" role="tabpanel" id="painel-apple" aria-labelledby="aba-apple">
         <ol class="passos">
-          <li>Abra o endereço do app <strong>no Chrome</strong>.</li>
-          <li>Toque nos <strong>três pontinhos</strong> no canto superior direito.</li>
-          <li>Escolha <strong>Instalar aplicativo</strong>.</li>
-          <li>Abra pelo ícone.</li>
+          <li class="passo">
+            <div class="passo-cabeca"><span class="passo-num">1</span><h3>Abra no Safari</h3></div>
+            <p>Abra o endereço do aplicativo no <strong>Safari</strong>. É ele que instala no iPad e no iPhone; pelo Chrome não dá.</p>
+            <div class="ilustra" aria-hidden="true">
+              <div class="il-barra">
+                <span class="il-aa">aA</span>
+                <span class="il-endereco destaque"><svg class="ic"><use href="#i-cadeado"/></svg>endereço do aplicativo</span>
+                <span class="il-botao"><svg class="ic"><use href="#i-compartilhar"/></svg></span>
+              </div>
+              <div class="il-pagina"><i></i><i></i><i></i></div>
+            </div>
+          </li>
+          <li class="passo">
+            <div class="passo-cabeca"><span class="passo-num">2</span><h3>Toque em Compartilhar</h3></div>
+            <p>É o quadrado com a seta para cima. Se ele não aparecer na barra, toque no botão <strong>⋯</strong> e procure por ele ali.</p>
+            <div class="ilustra" aria-hidden="true">
+              <div class="il-barra">
+                <span class="il-aa">aA</span>
+                <span class="il-endereco"><svg class="ic"><use href="#i-cadeado"/></svg>endereço do aplicativo</span>
+                <span class="il-botao destaque pulsa"><svg class="ic"><use href="#i-compartilhar"/></svg></span>
+              </div>
+              <div class="il-pagina"><i></i><i></i><i></i></div>
+            </div>
+          </li>
+          <li class="passo">
+            <div class="passo-cabeca"><span class="passo-num">3</span><h3>Adicionar à Tela de Início</h3></div>
+            <p>Na lista de opções, escolha <strong>Adicionar à Tela de Início</strong> e confirme em <strong>Adicionar</strong>.</p>
+            <div class="ilustra" aria-hidden="true">
+              <div class="il-folha">
+                <span class="il-item"><i></i></span>
+                <span class="il-item destaque"><svg class="ic"><use href="#i-mais-quadrado"/></svg>Adicionar à Tela de Início</span>
+                <span class="il-item"><i></i></span>
+              </div>
+            </div>
+          </li>
+          <li class="passo">
+            <div class="passo-cabeca"><span class="passo-num">4</span><h3>Abra pelo ícone</h3></div>
+            <p>O ícone <strong>Harmonia</strong> aparece na tela inicial. Aberto por ele, o aplicativo ocupa a tela inteira e passa a funcionar sem internet.</p>
+            <div class="ilustra" aria-hidden="true">
+              <div class="il-inicio">
+                <i></i><i></i><i></i>
+                <span class="il-app destaque"><img src="../icons/icon-180.png" alt="" width="60" height="60"><b>Harmonia</b></span>
+                <i></i><i></i><i></i><i></i>
+              </div>
+            </div>
+          </li>
         </ol>
+        <p class="observacao"><svg class="ic" aria-hidden="true"><use href="#i-sino"/></svg><span><strong>Modo silencioso:</strong> os decks A e B respeitam o silencioso do aparelho. Antes da sessão, desligue o sino na Central de Controle do iPad, ou a chave de silêncio do iPhone. As peças do Spotify não são afetadas.</span></p>
+      </div>
+
+      <!-- Android -->
+      <div class="aba-painel" role="tabpanel" id="painel-android" aria-labelledby="aba-android" hidden>
+        <ol class="passos">
+          <li class="passo">
+            <div class="passo-cabeca"><span class="passo-num">1</span><h3>Abra no Chrome</h3></div>
+            <p>Abra o endereço do aplicativo no <strong>Chrome</strong> do celular ou do tablet.</p>
+            <div class="ilustra" aria-hidden="true">
+              <div class="il-barra">
+                <span class="il-endereco destaque"><svg class="ic"><use href="#i-cadeado"/></svg>endereço do aplicativo</span>
+                <span class="il-botao"><svg class="ic"><use href="#i-pontos-v"/></svg></span>
+              </div>
+              <div class="il-pagina"><i></i><i></i><i></i></div>
+            </div>
+          </li>
+          <li class="passo">
+            <div class="passo-cabeca"><span class="passo-num">2</span><h3>Toque nos três pontinhos</h3></div>
+            <p>O menu do Chrome fica no canto superior direito, ao lado do endereço.</p>
+            <div class="ilustra" aria-hidden="true">
+              <div class="il-barra">
+                <span class="il-endereco"><svg class="ic"><use href="#i-cadeado"/></svg>endereço do aplicativo</span>
+                <span class="il-botao destaque pulsa"><svg class="ic"><use href="#i-pontos-v"/></svg></span>
+              </div>
+              <div class="il-pagina"><i></i><i></i><i></i></div>
+            </div>
+          </li>
+          <li class="passo">
+            <div class="passo-cabeca"><span class="passo-num">3</span><h3>Instalar aplicativo</h3></div>
+            <p>Escolha <strong>Instalar aplicativo</strong> e confirme. Em algumas versões do Android, a opção se chama <strong>Adicionar à tela inicial</strong>.</p>
+            <div class="ilustra" aria-hidden="true">
+              <div class="il-folha il-menu">
+                <span class="il-item"><i></i></span>
+                <span class="il-item"><i></i></span>
+                <span class="il-item destaque"><svg class="ic"><use href="#i-instalar"/></svg>Instalar aplicativo</span>
+                <span class="il-item"><i></i></span>
+              </div>
+            </div>
+          </li>
+          <li class="passo">
+            <div class="passo-cabeca"><span class="passo-num">4</span><h3>Abra pelo ícone</h3></div>
+            <p>O ícone <strong>Harmonia</strong> aparece junto dos outros aplicativos. Aberto por ele, ocupa a tela inteira e funciona sem internet.</p>
+            <div class="ilustra" aria-hidden="true">
+              <div class="il-inicio">
+                <i></i><i></i><i></i>
+                <span class="il-app destaque"><img src="../icons/icon-180.png" alt="" width="60" height="60"><b>Harmonia</b></span>
+                <i></i><i></i><i></i><i></i>
+              </div>
+            </div>
+          </li>
+        </ol>
+        <p class="observacao"><svg class="ic" aria-hidden="true"><use href="#i-info"/></svg><span><strong>Tela recomendada:</strong> o painel foi desenhado para tablet na horizontal. No celular ele funciona, em tela mais apertada.</span></p>
+      </div>
+
+      <!-- Computador -->
+      <div class="aba-painel" role="tabpanel" id="painel-pc" aria-labelledby="aba-pc" hidden>
+        <ol class="passos">
+          <li class="passo">
+            <div class="passo-cabeca"><span class="passo-num">1</span><h3>Abra no Chrome ou no Edge</h3></div>
+            <p>No Windows ou no Mac, abra o endereço do aplicativo no <strong>Google Chrome</strong> ou no <strong>Microsoft Edge</strong>.</p>
+            <div class="ilustra" aria-hidden="true">
+              <div class="il-janela">
+                <span class="il-bolinhas"><i></i><i></i><i></i></span>
+                <span class="il-endereco destaque"><svg class="ic"><use href="#i-cadeado"/></svg>endereço do aplicativo</span>
+              </div>
+              <div class="il-pagina"><i></i><i></i><i></i></div>
+            </div>
+          </li>
+          <li class="passo">
+            <div class="passo-cabeca"><span class="passo-num">2</span><h3>Clique em Instalar</h3></div>
+            <p>No fim da barra de endereço aparece o ícone de instalar, um monitor com uma seta. Se não aparecer, procure <strong>Instalar</strong> no menu do navegador.</p>
+            <div class="ilustra" aria-hidden="true">
+              <div class="il-janela">
+                <span class="il-bolinhas"><i></i><i></i><i></i></span>
+                <span class="il-endereco"><svg class="ic"><use href="#i-cadeado"/></svg>endereço do aplicativo<span class="il-instalar destaque pulsa"><svg class="ic"><use href="#i-instalar"/></svg></span></span>
+              </div>
+              <div class="il-pagina"><i></i><i></i><i></i></div>
+            </div>
+          </li>
+          <li class="passo">
+            <div class="passo-cabeca"><span class="passo-num">3</span><h3>Confirme</h3></div>
+            <p>Confirme em <strong>Instalar</strong>. O aplicativo abre numa janela própria e passa a ficar no menu Iniciar do Windows ou no Launchpad do Mac.</p>
+            <div class="ilustra" aria-hidden="true">
+              <div class="il-dialogo">
+                <span class="il-dialogo-topo"><img src="../icons/icon-180.png" alt="" width="34" height="34"><span><b>Instalar aplicativo?</b><small>Mestre de Harmonia</small></span></span>
+                <span class="il-dialogo-botoes"><i>Cancelar</i><i class="destaque">Instalar</i></span>
+              </div>
+            </div>
+          </li>
+          <li class="passo">
+            <div class="passo-cabeca"><span class="passo-num">4</span><h3>No Mac, também pelo Safari</h3></div>
+            <p>Quem prefere o Safari no Mac usa o menu <strong>Arquivo → Adicionar ao Dock</strong>, disponível nas versões recentes do macOS.</p>
+            <div class="ilustra" aria-hidden="true">
+              <div class="il-folha il-menu-mac">
+                <span class="il-item il-item-titulo">Arquivo</span>
+                <span class="il-item"><i></i></span>
+                <span class="il-item destaque">Adicionar ao Dock…</span>
+                <span class="il-item"><i></i></span>
+              </div>
+            </div>
+          </li>
+        </ol>
+        <p class="observacao"><svg class="ic" aria-hidden="true"><use href="#i-info"/></svg><span><strong>Spotify no computador:</strong> com o aplicativo do Spotify aberto no próprio computador, o painel o comanda da mesma forma que no iPad.</span></p>
       </div>
     </div>
 
-    <div class="nota">A partir daí ele <strong>funciona sem internet</strong>. Se o wi-fi da Loja cair
-      no meio da sessão, o painel e os arquivos de áudio continuam. Só o Spotify precisa de conexão,
-      por natureza.</div>
-  </div>
-</section>
-
-<section>
-  <div class="wrap">
-    <h2>Configuração</h2>
-
-    <h3 style="margin-top:8px">Montar o repertório</h3>
-    <p>No Spotify, na música: <strong>⋯ → Compartilhar → Copiar link</strong>. No app:
-      <strong>+ Peça</strong>, colar, salvar. Dá para colar vários links de uma vez — vira uma peça
-      para cada.</p>
-
-    <figure class="tela">
-      <img src="telas/peca.png" alt="Tela de cadastro de uma peça, com campo para o link do Spotify, nome, compositor e anotação de execução" loading="lazy">
-      <figcaption>Cola-se o link e o nome vem preenchido. A anotação de execução é a sua deixa.</figcaption>
-    </figure>
-
-    <h3 style="margin-top:24px">Como as peças tocam</h3>
-    <p>Há dois caminhos, escolhidos em Ajustes:</p>
-    <ul class="lista">
-      <li><strong>Sempre abrir o app do Spotify</strong> — funciona sempre, sem configurar nada.
-        Troca de tela ao tocar. É o caminho recomendado para a sessão.</li>
-      <li><strong>Comandar sem sair do painel</strong> — mais elegante, mantém você na mesa de som.
-        Exige conta <strong>Premium</strong>, um cadastro gratuito de desenvolvedor no Spotify e o
-        app do Spotify aberto em segundo plano. Se ele for fechado, o comando não chega.</li>
-    </ul>
-    <p>O aplicativo confere se a música realmente começou. Quando o comando não pega, ele abre a
-      faixa no Spotify sozinho, em vez de deixar você no silêncio.</p>
-
-    <h3 style="margin-top:24px">Cópia de segurança</h3>
-    <p><strong>Ajustes → Exportar roteiro</strong> gera um arquivo com momentos, peças, links e
-      anotações. Guarde no iCloud ou no Google Drive. Trocou de aparelho, é só importar.</p>
-  </div>
-</section>
-
-<section>
-  <div class="wrap">
-    <h2>Perguntas frequentes</h2>
-
-    <div class="faq">
-      <h3>Preciso de conta paga no Spotify?</h3>
-      <p>Não para usar o app. O modo padrão só guarda os links e abre o Spotify ao tocar, e isso
-        funciona com conta gratuita. O controle de dentro do painel é que exige Premium — limitação
-        do Spotify, não do aplicativo.</p>
-    </div>
-
-    <div class="faq">
-      <h3>Funciona sem internet?</h3>
-      <p>O painel, o roteiro e os arquivos de áudio, sim. As faixas do Spotify não, porque quem toca
-        é o Spotify.</p>
-    </div>
-
-    <div class="faq">
-      <h3>Consigo mesmo sobrepor duas músicas?</h3>
-      <p>Sim, entre os decks A e B, com arquivos de áudio. Com faixas do Spotify não é possível em
-        aplicativo nenhum.</p>
-    </div>
-
-    <div class="faq">
-      <h3>Dá para usar as músicas baixadas no Spotify como arquivo?</h3>
-      <p>Não. Os downloads do Spotify são criptografados e ficam trancados dentro do aplicativo dele.
-        Para os decks é preciso ter o arquivo de áudio por outra via.</p>
-    </div>
-
-    <div class="faq">
-      <h3>Cada Loja precisa configurar do zero?</h3>
-      <p>O aplicativo, não — instala e já vem com uma estrutura de momentos para adaptar. O repertório
-        é de cada Loja, montado colando os links do próprio acervo.</p>
-    </div>
-
-    <div class="faq">
-      <h3>Onde ficam guardados o roteiro e as anotações?</h3>
-      <p>Só no aparelho. O aplicativo não tem servidor nem cadastro, e nada do que você escreve
-        nele é enviado para fora. Veja a seção <a href="#sigilo">Sigilo</a>.</p>
-    </div>
-
-    <div class="faq">
-      <h3>O som continua se eu sair do aplicativo?</h3>
-      <p>As faixas do Spotify sim. Os decks A e B não: aplicativo web no celular ou tablet só toca em
-        primeiro plano. Deixe o painel aberto durante a sessão — ele mantém a tela acesa sozinho
-        enquanto houver som.</p>
+    <!-- Primeiro acesso -->
+    <div class="primeiro">
+      <header class="cabeca-menor">
+        <p class="sobretitulo"><span class="traco" aria-hidden="true"></span>Primeiro acesso</p>
+        <h3 class="titulo-medio" data-palavras>Da instalação à primeira sessão.</h3>
+        <p data-sobe>Os mesmos passos em qualquer aparelho. Nada precisa ser feito de uma vez: o roteiro pode ser montado aos poucos.</p>
+      </header>
+      <ol class="grade-primeiro">
+        <li data-sobe>
+          <span class="primeiro-num">01</span>
+          <h4>Dê o nome da sua Loja</h4>
+          <p>Toque no nome que aparece no topo do painel e escreva o da sua Loja.</p>
+        </li>
+        <li data-sobe>
+          <span class="primeiro-num">02</span>
+          <h4>Ajuste os momentos</h4>
+          <p>O aplicativo vem com doze momentos de uma sessão. Em <strong>Renomear e reordenar</strong>, deixe-os com os nomes e a ordem do seu ritual; o <strong>+</strong> cria novos.</p>
+        </li>
+        <li data-sobe>
+          <span class="primeiro-num">03</span>
+          <h4>Cadastre as peças</h4>
+          <p>No Spotify, na música: <strong>⋯ → Compartilhar → Copiar link</strong>. No painel: <strong>+ Peça</strong>, cole e salve. O nome vem sozinho.</p>
+        </li>
+        <li data-sobe>
+          <span class="primeiro-num">04</span>
+          <h4>Escreva as deixas</h4>
+          <p>Na <strong>anotação de execução</strong> de cada peça, anote quando ela entra e quando corta.</p>
+        </li>
+        <li data-sobe>
+          <span class="primeiro-num">05</span>
+          <h4>Escolha como o Spotify toca</h4>
+          <p>Em <strong>Ajustes</strong>, “Sempre abrir o app do Spotify” funciona com qualquer conta, sem configurar nada. “Comandar daqui, sem sair do painel” exige conta Premium e um cadastro gratuito de desenvolvedor no Spotify, feito uma vez.</p>
+        </li>
+        <li data-sobe>
+          <span class="primeiro-num">06</span>
+          <h4>Guarde uma cópia</h4>
+          <p>Em <strong>Ajustes → Exportar roteiro</strong>. Os arquivos de áudio dos decks ficam só no aparelho e não vão na cópia.</p>
+        </li>
+      </ol>
+      <p class="observacao observacao-larga"><svg class="ic" aria-hidden="true"><use href="#i-info"/></svg><span><strong>Durante a sessão,</strong> deixe o painel aberto. As peças do Spotify continuam se você sair dele, mas os decks A e B só tocam com o aplicativo na tela.</span></p>
     </div>
   </div>
 </section>
 
-<section id="sigilo">
-  <div class="wrap">
-    <h2>Sigilo</h2>
-    <p class="muted">Um aplicativo que guarda a sequência dos trabalhos de uma Loja precisa
-      responder a uma pergunta antes de qualquer outra: para onde vão esses dados?</p>
+<!-- ═════════════════ PERGUNTAS ═════════════════ -->
+<section class="secao perguntas" id="perguntas" data-secao>
+  <div class="embalagem perguntas-grade">
+    <header class="cabeca perguntas-cabeca">
+      <p class="sobretitulo"><span class="traco" aria-hidden="true"></span>Perguntas frequentes</p>
+      <h2 class="titulo" data-palavras>O que costumam <em>perguntar.</em></h2>
+      <p class="lede" data-sobe>Respostas curtas, baseadas no funcionamento real do aplicativo.</p>
+    </header>
 
-    <div class="grid" style="margin-bottom:22px">
-      <div class="card">
-        <h3>Não existe servidor</h3>
-        <p>O aplicativo não tem servidor próprio, nem banco de dados, nem cadastro. Não há conta
-          para criar, nem senha, nem nuvem. Ele roda inteiro dentro do aparelho.</p>
+    <div class="sanfona" data-sanfona>
+      <div class="sf-item">
+        <h3><button type="button" aria-expanded="false" aria-controls="r1" id="p1">O que é o Mestre de Harmonia?<i aria-hidden="true"></i></button></h3>
+        <div class="sf-resposta" id="r1" role="region" aria-labelledby="p1"><div><p>Um painel de música para sessões maçônicas. Ele organiza o repertório pelos momentos do ritual, toca cada peça com um toque, pelo Spotify ou por arquivo de áudio, e reúne uma mesa de som de dois decks com transição e botão de silêncio.</p></div></div>
       </div>
-      <div class="card">
-        <h3>O roteiro fica no aparelho</h3>
-        <p>Nomes dos momentos, ordem da sessão, anotações de execução e arquivos de áudio ficam
-          gravados só no tablet. <strong>Nada disso é enviado para lugar nenhum.</strong></p>
+      <div class="sf-item">
+        <h3><button type="button" aria-expanded="false" aria-controls="r2" id="p2">Para quem ele foi desenvolvido?<i aria-hidden="true"></i></button></h3>
+        <div class="sf-resposta" id="r2" role="region" aria-labelledby="p2"><div><p>Para o Mestre de Harmonia de Lojas maçônicas. Ele nasceu na A∴R∴L∴S∴ Colunas de Pedras Grandes, a Loja mãe do aplicativo, onde é usado nos trabalhos.</p></div></div>
       </div>
-      <div class="card">
-        <h3>Nenhuma Loja vê a outra</h3>
-        <p>Não há repositório comum de roteiros. Cada Loja monta o seu, no seu aparelho, e ele
-          não sai de lá. Nem quem desenvolveu o aplicativo tem acesso.</p>
+      <div class="sf-item">
+        <h3><button type="button" aria-expanded="false" aria-controls="r3" id="p3">Como faço a instalação?<i aria-hidden="true"></i></button></h3>
+        <div class="sf-resposta" id="r3" role="region" aria-labelledby="p3"><div><p>Pelo navegador, sem loja de aplicativos: Safari no iPad e no iPhone, Chrome no Android, Chrome ou Edge no computador. O passo a passo de cada aparelho está na seção <a href="#instalar">Como instalar</a>.</p></div></div>
       </div>
-      <div class="card">
-        <h3>A cópia é sua</h3>
-        <p>A cópia de segurança gera um arquivo que fica com você, para guardar onde julgar
-          adequado. Não sobe automaticamente para nenhum serviço.</p>
+      <div class="sf-item">
+        <h3><button type="button" aria-expanded="false" aria-controls="r4" id="p4">Quais aparelhos são compatíveis?<i aria-hidden="true"></i></button></h3>
+        <div class="sf-resposta" id="r4" role="region" aria-labelledby="p4"><div><p>iPad, iPhone, tablets e celulares Android e computadores com Windows ou macOS. O painel foi desenhado para tablet na horizontal, que é como ele é usado em sessão; no celular funciona, em tela mais apertada.</p></div></div>
+      </div>
+      <div class="sf-item">
+        <h3><button type="button" aria-expanded="false" aria-controls="r5" id="p5">É preciso criar uma conta?<i aria-hidden="true"></i></button></h3>
+        <div class="sf-resposta" id="r5" role="region" aria-labelledby="p5"><div><p>No aplicativo, não: ele não tem cadastro, senha nem servidor. Para tocar peças do Spotify, vale a sua própria conta do Spotify, gratuita ou paga. Comandar o Spotify sem sair do painel e importar playlists inteiras exigem conta Premium e um cadastro gratuito de desenvolvedor no Spotify.</p></div></div>
+      </div>
+      <div class="sf-item">
+        <h3><button type="button" aria-expanded="false" aria-controls="r6" id="p6">Funciona sem internet?<i aria-hidden="true"></i></button></h3>
+        <div class="sf-resposta" id="r6" role="region" aria-labelledby="p6"><div><p>O painel, o roteiro e os arquivos de áudio, sim. Se o wi-fi da Loja cair no meio da sessão, eles continuam. As faixas do Spotify precisam de conexão, porque quem as toca é o Spotify.</p></div></div>
+      </div>
+      <div class="sf-item">
+        <h3><button type="button" aria-expanded="false" aria-controls="r7" id="p7">Dá para tocar duas músicas ao mesmo tempo?<i aria-hidden="true"></i></button></h3>
+        <div class="sf-resposta" id="r7" role="region" aria-labelledby="p7"><div><p>Sim, entre os decks A e B, com arquivos de áudio. Duas faixas do Spotify ao mesmo tempo não é possível em aplicativo nenhum. Usando só o Spotify, a sobreposição possível é o crossfade dele: app do Spotify → Ajustes → Reprodução → Crossfade, até 12 segundos.</p></div></div>
+      </div>
+      <div class="sf-item">
+        <h3><button type="button" aria-expanded="false" aria-controls="r8" id="p8">Como atualizo o aplicativo?<i aria-hidden="true"></i></button></h3>
+        <div class="sf-resposta" id="r8" role="region" aria-labelledby="p8"><div><p>Não é preciso fazer nada: as atualizações chegam sozinhas quando o aplicativo é aberto com internet. Para conferir, <strong>Ajustes</strong> mostra a versão instalada e tem o botão <strong>Buscar atualização</strong>.</p></div></div>
+      </div>
+      <div class="sf-item">
+        <h3><button type="button" aria-expanded="false" aria-controls="r9" id="p9">E se eu trocar de aparelho?<i aria-hidden="true"></i></button></h3>
+        <div class="sf-resposta" id="r9" role="region" aria-labelledby="p9"><div><p>Em <strong>Ajustes → Exportar roteiro</strong>, gere a cópia com momentos, peças, links e anotações e guarde onde preferir. No aparelho novo, use <strong>Importar arquivo</strong>. Os arquivos de áudio dos decks precisam ser colocados de novo.</p></div></div>
+      </div>
+      <div class="sf-item">
+        <h3><button type="button" aria-expanded="false" aria-controls="r10" id="p10">A música continua se eu sair do aplicativo?<i aria-hidden="true"></i></button></h3>
+        <div class="sf-resposta" id="r10" role="region" aria-labelledby="p10"><div><p>As faixas do Spotify, sim. Os decks A e B, não: aplicativo de navegador no celular e no tablet só toca com a tela à frente. Deixe o painel aberto durante a sessão; ele mantém a tela acesa enquanto houver som.</p></div></div>
+      </div>
+      <div class="sf-item">
+        <h3><button type="button" aria-expanded="false" aria-controls="r11" id="p11">Como obtenho suporte?<i aria-hidden="true"></i></button></h3>
+        <div class="sf-resposta" id="r11" role="region" aria-labelledby="p11"><div><p>O aplicativo é mantido pela A∴R∴L∴S∴ Colunas de Pedras Grandes, e o canal de atendimento às Lojas será informado na liberação. Se algo falhar com o Spotify, <strong>Ajustes → Diagnóstico da conexão</strong> mostra o que está acontecendo, e as mensagens de erro trazem a versão instalada, o que ajuda quem for atender.</p></div></div>
       </div>
     </div>
-
-    <h3>O que sai do aparelho, e só isso</h3>
-    <p>Como o repertório é do Spotify, o aplicativo conversa com o Spotify — e apenas com ele:</p>
-    <ul class="lista">
-      <li>Ao cadastrar uma peça, o <strong>identificador da faixa</strong> é enviado ao Spotify
-        para buscar o nome e a capa.</li>
-      <li>Ao tocar, o <strong>comando de reprodução</strong> vai ao Spotify, como em qualquer
-        aparelho ligado à sua conta.</li>
-    </ul>
-    <p>Em nenhum dos dois casos vai junto o nome do momento, a ordem da sessão ou a anotação de
-      execução. O Spotify sabe apenas qual música foi pedida — exatamente como saberia se você
-      apertasse play no aplicativo dele.</p>
-
-    <div class="nota">Se a sua Loja preferir não usar o Spotify, o aplicativo funciona só com
-      arquivos de áudio no próprio tablet — e aí <strong>nada</strong> sai do aparelho.</div>
   </div>
 </section>
 
-<section>
-  <div class="wrap">
-    <h2>Livre para usar. Contribua com a obra.</h2>
-
-    <div class="selo">
-      <img src="../icons/logo.png" alt="Emblema da A∴R∴L∴S∴ Colunas de Pedras Grandes">
-      <div><strong>A∴R∴L∴S∴ Colunas de Pedras Grandes</strong>
-        Loja mãe do aplicativo, onde ele foi concebido, construído e é usado em sessão.</div>
-    </div>
-
-    <p>O aplicativo nasceu de uma necessidade real de sessão e é <strong>livre para qualquer
-      Loja usar</strong>. Não há chave, não há prazo, não há cobrança para instalar.</p>
-
-    <p>O que pedimos é outra coisa: se ele servir à sua Loja, <strong>contribua com a obra
-      beneficente que ele sustenta</strong>. Cada contribuição vai integralmente para essa obra —
-      não para quem desenvolveu.</p>
-
-    <div class="nota" style="border-left-color:var(--spotify)">
-      <strong>Contribuição sugerida:</strong>
-      <span class="preencher">[ valor por Loja e forma de contribuição — chave PIX, conta, etc. ]</span>
-    </div>
-
-    <h3 style="margin-top:26px">A obra beneficiada</h3>
-    <p><span class="preencher">[ Qual obra, o que ela faz e como o recurso é aplicado. ]</span></p>
-
-    <h3 id="contato" style="margin-top:22px">Falar conosco</h3>
-    <p>Para instalar na sua Loja, tirar dúvidas ou pedir ajuda a montar o repertório:<br>
-      <span class="preencher">[ nome, e-mail ou WhatsApp ]</span></p>
-
-
+<!-- Fecho -->
+<section class="fecho" aria-label="Encerramento">
+  <div class="embalagem fecho-dentro">
+    <img class="fecho-selo" src="../icons/logo.png" alt="" width="88" height="88" loading="lazy">
+    <p class="fecho-frase" data-palavras>A música certa, <em>no momento certo.</em></p>
+    <a class="btn btn-linha" href="#instalar" data-ima><span>Ver como instalar</span><svg class="ic" aria-hidden="true"><use href="#i-seta"/></svg></a>
   </div>
 </section>
 
-<footer>
-  <div class="wrap">
-    <p>Mestre de Harmonia · painel de música para sessões maçônicas</p>
+</main>
+
+<footer class="rodape">
+  <div class="embalagem rodape-grade">
+    <div class="rodape-marca">
+      <span class="marca"><span class="selo"><img src="../icons/logo.png" alt="" width="40" height="40" loading="lazy"></span><span class="marca-nome">Mestre de Harmonia</span></span>
+      <p>Painel de música para sessões maçônicas. Concebido, construído e usado em sessão na A∴R∴L∴S∴ Colunas de Pedras Grandes, a Loja mãe do aplicativo.</p>
+    </div>
+    <nav class="rodape-nav" aria-label="Rodapé">
+      <a href="#aplicativo">O aplicativo</a>
+      <a href="#sessao">Na sessão</a>
+      <a href="#sigilo">Sigilo</a>
+      <a href="#galeria">Galeria</a>
+      <a href="#instalar">Como instalar</a>
+      <a href="#perguntas">Perguntas</a>
+    </nav>
+    <div class="rodape-info">
+      <p data-linha-versao hidden>Versão atual <strong data-versao></strong></p>
+      <p>© 2026 A∴R∴L∴S∴ Colunas de Pedras Grandes. Todos os direitos reservados.</p>
+    </div>
   </div>
 </footer>
 
+<!-- Visualização ampliada -->
+<dialog class="lupa" aria-label="Imagem ampliada">
+  <figure>
+    <img alt="">
+    <figcaption></figcaption>
+  </figure>
+  <button type="button" class="lupa-fechar" aria-label="Fechar"><svg class="ic"><use href="#i-x"/></svg></button>
+  <button type="button" class="lupa-ant" aria-label="Imagem anterior"><svg class="ic"><use href="#i-esq"/></svg></button>
+  <button type="button" class="lupa-prox" aria-label="Próxima imagem"><svg class="ic"><use href="#i-dir"/></svg></button>
+</dialog>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js" defer></script>
+<script src="assets/movimento.js" defer></script>
 </body>
 </html>
